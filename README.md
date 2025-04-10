@@ -1,23 +1,23 @@
-# 智能时间管理优化系统 MVP
+# 智能时间管理优化系统
 
 ## 项目结构
 ```
 project/
-├── client/                 # 客户端代码
-│   ├── src/               # 源代码
-│   │   ├── components/    # Vue组件
-│   │   ├── views/        # 页面视图
-│   │   ├── services/     # 服务层
-│   │   └── utils/        # 工具函数
-│   └── package.json      # 前端依赖
-├── server/                # 服务器端代码
-│   ├── src/              # 源代码
-│   │   ├── api/          # API接口
-│   │   ├── models/       # 数据模型
-│   │   ├── services/     # 业务逻辑
-│   │   └── utils/        # 工具函数
-│   └── requirements.txt  # Python依赖
-└── docs/                 # 文档
+├── client/					# 客户端代码
+│   ├── src/				# 源代码
+│   │   ├── components/		# Vue组件
+│   │   ├── views/			# 页面视图
+│   │   ├── services/		# 服务层
+│   │   └── utils/			# 工具函数
+│   └── package.json		# 前端依赖
+├── server/					# 服务器端代码
+│   ├── src/				# 源代码
+│   │   ├── api/			# API接口
+│   │   ├── models/			# 数据模型
+│   │   ├── services/ 		# 业务逻辑
+│   │   └── utils/			# 工具函数
+│   └── requirements.txt	# Python依赖
+└── docs/					# 文档
 ```
 
 ## MVP功能范围
