@@ -25,7 +25,7 @@
 .el-header {
   background-color: #409EFF;
   color: white;
-  line-height: 60px;
+  line-height: 50px;
   text-align: center;
 }
 
