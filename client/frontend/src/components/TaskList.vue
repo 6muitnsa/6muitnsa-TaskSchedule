@@ -42,6 +42,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
@@ -56,6 +57,7 @@ interface Task {
   update_time: string
 }
 
+const router = useRouter()
 const tasks = ref<Task[]>([])
 const showCreateDialog = ref(false)
 const newTask = ref({
@@ -99,8 +101,8 @@ const handleCreate = async () => {
   }
 }
 
-const handleEdit = async (task: Task) => {
-  // TODO: 实现编辑功能
+const handleEdit = (task: Task) => {
+  router.push(`/tasks/${task.id}`)
 }
 
 const handleDelete = async (task: Task) => {
