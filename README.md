@@ -24,7 +24,7 @@ project/
 
 ### 1. 核心功能
 - 基础任务管理（创建、查看、编辑、删除）
-- 简单的任务调度（先来先服务算法）
+- 简单的任务调度（先来先服务算法等）
 - 本地数据存储（SQLite）
 
 ### 2. 用户界面
@@ -39,7 +39,7 @@ project/
 ## 技术栈
 - 前端：Vue3 + TypeScript + Element Plus
 - 后端：Python FastAPI
-- 数据库：SQLite
+- 数据库：SQLite(本地) + MySQL(云端)
 
 ## 开发计划
 1. 搭建基础项目结构
