@@ -52,9 +52,19 @@ dist-ssr/
 Thumbs.db
 
 # 项目特定
-server/task_manager.db
-server/task_manager.db-journal
+# 数据库文件
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# 日志文件
 *.log
+logs/
+server/logs/
+client/backend/logs/
+
+# 测试和覆盖率报告
 coverage/
 .coverage
 htmlcov/
@@ -62,4 +72,29 @@ htmlcov/
 .mypy_cache/
 .dmypy.json
 dmypy.json
-.ipynb_checkpoints 
+
+# 其他
+.ipynb_checkpoints
+*.bak
+*.tmp
+*.temp
+.cache/
+.temp/
+temp/
+tmp/
+
+# 前端构建产物
+client/frontend/dist/
+client/frontend/.vite/
+client/frontend/.nuxt/
+client/frontend/.output/
+
+# 后端构建产物
+client/backend/__pycache__/
+client/backend/build/
+client/backend/dist/
+
+# 文档生成
+docs/_build/
+docs/_static/
+docs/_templates/ 
