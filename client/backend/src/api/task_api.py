@@ -1,62 +1,66 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from src.services import task_service
-from src.utils.database import get_db
 from typing import List
-from pydantic import BaseModel, ConfigDict
-from datetime import datetime
-import uuid
+from services import task_service
+from utils.database import get_db
+from schemas.task import Task, TaskCreate
+from models.task import TaskStatus, TimeStatus
 
 router = APIRouter()
 
-class TaskCreate(BaseModel):
-    name: str
-    description: str = None
-    priority: int = 1
-    status: str = "待完成"
-    time_status: str = "未开始"
-    is_locked: bool = False
-
-class TaskResponse(TaskCreate):
-    id: str
-    create_time: datetime
-    update_time: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-    @property
-    def create_time_str(self) -> str:
-        return self.create_time.isoformat() if self.create_time else None
-
-    @property
-    def update_time_str(self) -> str:
-        return self.update_time.isoformat() if self.update_time else None
-
-@router.post("/tasks/", response_model=TaskResponse)
+@router.post("/tasks/", response_model=Task)
 def create_task(task: TaskCreate, db: Session = Depends(get_db)):
-    return task_service.create_task(db, task.model_dump())
+    if len(task.name) > 100:
+        raise HTTPException(status_code=400, detail="Task name cannot exceed 100 characters")
+    if task.description and len(task.description) > 500:
+        raise HTTPException(status_code=400, detail="Task description cannot exceed 500 characters")
+    if task.status not in [TaskStatus.PENDING, TaskStatus.COMPLETED, TaskStatus.FOLLOW_UP, TaskStatus.CANCELLED]:
+        raise HTTPException(status_code=400, detail="Invalid task status")
+    if task.timeStatus not in [TimeStatus.NOT_STARTED, TimeStatus.IN_PROGRESS, TimeStatus.OVERDUE, TimeStatus.COMPLETED]:
+        raise HTTPException(status_code=400, detail="Invalid time status")
+    return task_service.create_task(db, task.dict())
 
-@router.get("/tasks/", response_model=List[TaskResponse])
-def list_tasks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return task_service.list_tasks(db, skip, limit)
+@router.get("/tasks/", response_model=List[Task])
+def read_tasks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    if limit > 1000:
+        raise HTTPException(status_code=400, detail="Query limit cannot exceed 1000")
+    tasks = task_service.get_tasks(db, skip=skip, limit=limit)
+    return tasks
 
-@router.get("/tasks/{task_id}", response_model=TaskResponse)
-def get_task(task_id: str, db: Session = Depends(get_db)):
+@router.get("/tasks/{task_id}", response_model=Task)
+def read_task(task_id: str, db: Session = Depends(get_db)):
     task = task_service.get_task(db, task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
-@router.put("/tasks/{task_id}", response_model=TaskResponse)
+@router.put("/tasks/{task_id}", response_model=Task)
 def update_task(task_id: str, task: TaskCreate, db: Session = Depends(get_db)):
-    updated_task = task_service.update_task(db, task_id, task.model_dump())
-    if updated_task is None:
+    if len(task.name) > 100:
+        raise HTTPException(status_code=400, detail="Task name cannot exceed 100 characters")
+    if task.description and len(task.description) > 500:
+        raise HTTPException(status_code=400, detail="Task description cannot exceed 500 characters")
+    if task.status not in [TaskStatus.PENDING, TaskStatus.COMPLETED, TaskStatus.FOLLOW_UP, TaskStatus.CANCELLED]:
+        raise HTTPException(status_code=400, detail="Invalid task status")
+    if task.timeStatus not in [TimeStatus.NOT_STARTED, TimeStatus.IN_PROGRESS, TimeStatus.OVERDUE, TimeStatus.COMPLETED]:
+        raise HTTPException(status_code=400, detail="Invalid time status")
+    task = task_service.update_task(db, task_id, task.dict())
+    if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    return updated_task
+    return task
 
 @router.delete("/tasks/{task_id}")
 def delete_task(task_id: str, db: Session = Depends(get_db)):
     success = task_service.delete_task(db, task_id)
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
-    return {"message": "Task deleted successfully"} 
+    return {"message": "Task deleted successfully"}
+
+@router.patch("/tasks/{task_id}/status")
+def update_task_status(task_id: str, status: str, db: Session = Depends(get_db)):
+    if status not in [TaskStatus.PENDING, TaskStatus.COMPLETED, TaskStatus.FOLLOW_UP, TaskStatus.CANCELLED]:
+        raise HTTPException(status_code=400, detail="Invalid task status")
+    task = task_service.update_task_status(db, task_id, status)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task 

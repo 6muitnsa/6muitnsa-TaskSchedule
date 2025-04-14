@@ -1,30 +1,39 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api import task_api
-from src.models.task import Base
-from src.utils.database import engine
+from api import task_api, scheduler_api
+from utils.database import init_db
+import uvicorn
+import sys
 
-# 创建数据库表
-Base.metadata.create_all(bind=engine)
+try:
+    # 初始化数据库
+    init_db()
+except Exception as e:
+    print(f"数据库初始化失败: {str(e)}")
+    sys.exit(1)
 
 app = FastAPI(
-    title="智能时间管理优化系统",
-    description="基于调度算法的时间管理工具",
+    title="Task Management System",
+    description="A task management system with scheduling algorithms",
     version="0.1.0"
 )
 
 # 配置CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 允许的前端域名
+    allow_origins=["*"],  # 在生产环境中应该设置具体的源
     allow_credentials=True,
-    allow_methods=["*"],  # 允许所有方法
-    allow_headers=["*"],  # 允许所有头部
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 注册路由
-app.include_router(task_api.router, prefix="/api", tags=["tasks"])
+app.include_router(task_api.router, prefix="/api")
+app.include_router(scheduler_api.router, prefix="/api")
 
 @app.get("/")
 async def root():
-    return {"message": "欢迎使用智能时间管理优化系统"} 
+    return {"message": "Welcome to Task Management System"}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
