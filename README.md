@@ -5,21 +5,8 @@
 project/
 ├── client/	                    # 客户端代码
 │   ├── frontend/               # 客户端前端
-│   │   ├── src/                # 源代码
-│   │   │   ├── components/	    # Vue组件
-│   │   │   ├── views/          # 页面视图
-│   │   │   ├── services/       # 服务层
-│   │   │   └── utils/          # 工具函数
-│   │   └── package.json        # 前端依赖
 │   └── backend/                # 客户端后端
-│       ├── src/                # 源代码
-│       │   ├── api/            # API接口
-│       │   ├── models/         # 数据模型
-│       │   ├── services/       # 业务逻辑
-│       │   └── utils/          # 工具函数
-│       └── requirements.txt    # Python依赖
-├── server/
-│   └──………………                   # 服务端代码
+├── server/                     # 服务端代码
 └── docs/                       # 文档
 
 ```
@@ -41,7 +28,7 @@ project/
 - 任务时间信息（创建时间、更新时间）
 
 ## 技术栈
-- 前端：Vue3 + TypeScript + Element Plus
+- 前端：Vue3 + Element Plus
 - 后端：Python FastAPI
 - 数据库：SQLite(本地) + MySQL(云端)
 
