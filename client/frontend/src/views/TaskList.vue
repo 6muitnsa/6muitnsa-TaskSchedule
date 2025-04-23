@@ -1,330 +1,331 @@
 <template>
   <div class="task-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>任务列表</span>
-          <el-button type="primary" @click="$router.push('/create')">
-            <el-icon><Plus /></el-icon>新建任务
-          </el-button>
-        </div>
-      </template>
-
-      <!-- 视图切换 -->
-      <div class="view-switch">
-        <el-radio-group v-model="viewMode">
-          <el-radio-button label="list">列表视图</el-radio-button>
-          <el-radio-button label="month">月视图</el-radio-button>
-        </el-radio-group>
+    <div class="task-header">
+      <h2>任务列表</h2>
+      <div class="header-actions">
+        <el-input
+          v-model="searchQuery"
+          placeholder="搜索任务"
+          class="search-input"
+          clearable
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-button type="primary" @click="showCreateDialog">
+          <el-icon><Plus /></el-icon>
+          创建任务
+        </el-button>
       </div>
+    </div>
 
-      <!-- 任务统计 -->
-      <el-card class="statistics" shadow="never">
-        <div class="stat-container">
-          <div class="stat-item">
-            <span class="label">总任务数</span>
-            <span class="value">{{ totalTasks }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="label">完成率</span>
-            <span class="value">{{ completionRate }}%</span>
-          </div>
-          <div class="stat-item">
-            <span class="label">平均满意度</span>
-            <span class="value">{{ averageSatisfaction }}</span>
-          </div>
-        </div>
-      </el-card>
-
-      <el-form :inline="true" :model="filterForm" class="filter-form">
+    <el-card class="filter-card">
+      <el-form :inline="true" :model="filterForm">
+        <el-form-item label="优先级">
+          <el-select v-model="filterForm.priority" placeholder="选择优先级" clearable>
+            <el-option label="高" :value="3000" />
+            <el-option label="中" :value="2000" />
+            <el-option label="低" :value="1000" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="filterForm.status" placeholder="选择状态" clearable>
             <el-option label="待完成" value="pending" />
-            <el-option label="已完成" value="completed" />
-            <el-option label="待跟进" value="follow_up" />
-            <el-option label="已取消" value="cancelled" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="时间状态">
-          <el-select v-model="filterForm.time_status" placeholder="选择时间状态" clearable>
-            <el-option label="未开始" value="not_started" />
             <el-option label="进行中" value="in_progress" />
-            <el-option label="已超时" value="overdue" />
             <el-option label="已完成" value="completed" />
           </el-select>
         </el-form-item>
-        <el-form-item label="时间段">
-          <el-select v-model="filterForm.time_slot" placeholder="选择时间段" clearable>
+        <el-form-item label="时间类型">
+          <el-select v-model="filterForm.time_type" placeholder="选择时间类型" clearable>
             <el-option label="固定时间" value="fixed" />
             <el-option label="灵活时间" value="flexible" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleFilter">筛选</el-button>
-          <el-button @click="resetFilter">重置</el-button>
+          <el-button type="primary" @click="applyFilters">筛选</el-button>
+          <el-button @click="resetFilters">重置</el-button>
         </el-form-item>
       </el-form>
+    </el-card>
 
-      <!-- 列表视图 -->
-      <template v-if="viewMode === 'list'">
-        <el-table :data="tasks" style="width: 100%" v-loading="loading">
-          <el-table-column prop="name" label="任务名称" />
-          <el-table-column prop="description" label="描述" />
-          <el-table-column prop="priority" label="优先级" sortable />
-          <el-table-column prop="status" label="状态">
+    <el-card v-loading="loading">
+      <template v-if="filteredTasks.length > 0">
+        <el-table :data="filteredTasks" style="width: 100%">
+          <el-table-column prop="name" label="任务名称" min-width="200">
+            <template #default="{ row }">
+              <el-link type="primary" @click="viewTaskDetail(row)">
+                {{ row.name }}
+              </el-link>
+            </template>
+          </el-table-column>
+          <el-table-column prop="priority" label="优先级" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getPriorityType(row.priority)">
+                {{ getPriorityText(row.priority) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="estimated_time" label="预计时间" width="120">
+            <template #default="{ row }">
+              {{ row.estimated_time }}分钟
+            </template>
+          </el-table-column>
+          <el-table-column prop="status" label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="getStatusType(row.status)">
                 {{ getStatusText(row.status) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="time_status" label="时间状态">
+          <el-table-column prop="time_type" label="时间类型" width="120">
             <template #default="{ row }">
-              <el-tag :type="getTimeStatusType(row.time_status)">
-                {{ getTimeStatusText(row.time_status) }}
-              </el-tag>
+              {{ getTimeTypeText(row.time_type) }}
             </template>
           </el-table-column>
-          <el-table-column prop="time_slot" label="时间段">
-            <template #default="{ row }">
-              <el-tag :type="row.time_slot === 'fixed' ? 'danger' : 'success'">
-                {{ row.time_slot === 'fixed' ? '固定时间' : '灵活时间' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="200">
+          <el-table-column label="操作" width="200" fixed="right">
             <template #default="{ row }">
               <el-button-group>
-                <el-button type="primary" size="small" @click="handleEdit(row)">
+                <el-button
+                  size="small"
+                  type="primary"
+                  @click="startPomodoro(row)"
+                  :disabled="row.status === 'completed'"
+                >
+                  番茄钟
+                </el-button>
+                <el-button
+                  size="small"
+                  @click="editTask(row)"
+                  :disabled="row.status === 'completed'"
+                >
                   编辑
                 </el-button>
-                <el-button type="danger" size="small" @click="handleDelete(row)">
+                <el-button
+                  size="small"
+                  type="danger"
+                  @click="deleteTask(row)"
+                >
                   删除
                 </el-button>
               </el-button-group>
             </template>
           </el-table-column>
         </el-table>
-      </template>
-
-      <!-- 月视图 -->
-      <template v-else>
-        <div class="calendar-container">
-          <el-calendar v-model="currentDate">
-            <template #dateCell="{ data }">
-              <div class="calendar-cell">
-                <div class="date">{{ data.day.split('-').slice(2).join('-') }}</div>
-                <div class="tasks">
-                  <div 
-                    v-for="task in getTasksForDate(data.day)" 
-                    :key="task.id" 
-                    class="task-item"
-                    :class="{
-                      'fixed-time': task.time_slot === 'fixed',
-                      'flexible-time': task.time_slot === 'flexible',
-                      'locked': task.is_locked
-                    }"
-                  >
-                    <div class="task-time">{{ formatTime(task.start_time) }}</div>
-                    <div class="task-name">{{ task.name }}</div>
-                    <div class="task-status" :class="getStatusClass(task.status)">
-                      {{ getStatusText(task.status) }}
-                    </div>
-                    <div class="task-priority">优先级: {{ task.priority }}</div>
-                  </div>
-                </div>
-              </div>
-            </template>
-          </el-calendar>
+        <div class="pagination-container">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="totalTasks"
+            layout="total, sizes, prev, pager, next"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
         </div>
       </template>
-
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next"
-          :total="total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
+      <el-empty v-else description="暂无任务" />
     </el-card>
+
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogType === 'create' ? '创建任务' : '编辑任务'"
+      width="50%"
+    >
+      <TaskForm
+        v-if="dialogVisible"
+        :task="currentTask"
+        @submit="handleSubmit"
+        @cancel="dialogVisible = false"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import { taskApi } from '../api/task'
+import { Search, Plus } from '@element-plus/icons-vue'
+import axios from 'axios'
+import TaskForm from '../components/TaskForm.vue'
 
 const router = useRouter()
 const loading = ref(false)
 const tasks = ref([])
-const total = ref(0)
+const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
-const viewMode = ref('list')
-const currentDate = ref(new Date())
+const dialogVisible = ref(false)
+const dialogType = ref('create')
+const currentTask = ref(null)
 
 const filterForm = ref({
-  status: '',
-  time_status: '',
-  time_slot: ''
+  priority: null,
+  status: null,
+  time_type: null
 })
 
-// 统计相关
-const totalTasks = computed(() => tasks.value.length)
-const completionRate = computed(() => {
-  const completed = tasks.value.filter(t => t.status === 'completed').length
-  return totalTasks.value ? Math.round((completed / totalTasks.value) * 100) : 0
+const filteredTasks = computed(() => {
+  let result = tasks.value
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(task => 
+      task.name.toLowerCase().includes(query) ||
+      task.description.toLowerCase().includes(query)
+    )
+  }
+
+  if (filterForm.value.priority) {
+    result = result.filter(task => task.priority === filterForm.value.priority)
+  }
+
+  if (filterForm.value.status) {
+    result = result.filter(task => task.status === filterForm.value.status)
+  }
+
+  if (filterForm.value.time_type) {
+    result = result.filter(task => task.time_type === filterForm.value.time_type)
+  }
+
+  return result
 })
-const averageSatisfaction = computed(() => {
-  const tasksWithFeedback = tasks.value.filter(t => t.feedback)
-  return tasksWithFeedback.length
-    ? (tasksWithFeedback.reduce((sum, t) => sum + t.feedback, 0) / tasksWithFeedback.length).toFixed(1)
-    : '暂无'
-})
+
+const totalTasks = computed(() => filteredTasks.value.length)
+
+const getPriorityType = (priority) => {
+  if (priority >= 2001) return 'danger'
+  if (priority >= 1001) return 'warning'
+  return 'info'
+}
+
+const getPriorityText = (priority) => {
+  if (priority >= 2001) return '高'
+  if (priority >= 1001) return '中'
+  return '低'
+}
 
 const getStatusType = (status) => {
-  const types = {
-    pending: 'warning',
-    completed: 'success',
-    follow_up: 'info',
-    cancelled: 'danger'
+  switch (status) {
+    case 'completed':
+      return 'success'
+    case 'in_progress':
+      return 'warning'
+    default:
+      return 'info'
   }
-  return types[status] || 'info'
 }
 
 const getStatusText = (status) => {
-  const texts = {
-    pending: '待完成',
-    completed: '已完成',
-    follow_up: '待跟进',
-    cancelled: '已取消'
+  switch (status) {
+    case 'completed':
+      return '已完成'
+    case 'in_progress':
+      return '进行中'
+    default:
+      return '待完成'
   }
-  return texts[status] || status
 }
 
-const getTimeStatusType = (status) => {
-  const types = {
-    not_started: 'info',
-    in_progress: 'primary',
-    overdue: 'danger',
-    completed: 'success'
+const getTimeTypeText = (timeType) => {
+  return timeType === 'fixed' ? '固定时间' : '灵活时间'
+}
+
+const showCreateDialog = () => {
+  dialogType.value = 'create'
+  currentTask.value = null
+  dialogVisible.value = true
+}
+
+const editTask = (task) => {
+  dialogType.value = 'edit'
+  currentTask.value = task
+  dialogVisible.value = true
+}
+
+const viewTaskDetail = (task) => {
+  router.push(`/tasks/${task.id}`)
+}
+
+const deleteTask = async (task) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这个任务吗？', '提示', {
+      type: 'warning'
+    })
+    await axios.delete(`/api/tasks/${task.id}`)
+    ElMessage.success('删除成功')
+    loadTasks()
+  } catch {
+    // 用户取消删除
   }
-  return types[status] || 'info'
 }
 
-const getTimeStatusText = (status) => {
-  const texts = {
-    not_started: '未开始',
-    in_progress: '进行中',
-    overdue: '已超时',
-    completed: '已完成'
+const startPomodoro = (task) => {
+  router.push(`/pomodoro?taskId=${task.id}`)
+}
+
+const handleSubmit = async (taskData) => {
+  try {
+    if (dialogType.value === 'create') {
+      await axios.post('/api/tasks', taskData)
+      ElMessage.success('创建成功')
+    } else {
+      await axios.put(`/api/tasks/${taskData.id}`, taskData)
+      ElMessage.success('编辑成功')
+    }
+    dialogVisible.value = false
+    loadTasks()
+  } catch (error) {
+    ElMessage.error('操作失败，请重试')
   }
-  return texts[status] || status
 }
 
-const getStatusClass = (status) => {
-  return `status-${status}`
+const applyFilters = () => {
+  currentPage.value = 1
+  loadTasks()
 }
 
-// 获取指定日期的任务
-const getTasksForDate = (date) => {
-  return tasks.value.filter(task => {
-    const taskDate = new Date(task.start_time).toISOString().split('T')[0]
-    return taskDate === date
-  })
+const resetFilters = () => {
+  filterForm.value = {
+    priority: null,
+    status: null,
+    time_type: null
+  }
+  currentPage.value = 1
+  loadTasks()
 }
 
-const formatTime = (datetime) => {
-  if (!datetime) return '未设置'
-  return new Date(datetime).toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  loadTasks()
 }
 
-const fetchTasks = async () => {
+const handleCurrentChange = (val) => {
+  currentPage.value = val
+  loadTasks()
+}
+
+const loadTasks = async () => {
   loading.value = true
   try {
-    const params = {
-      skip: (currentPage.value - 1) * pageSize.value,
-      limit: pageSize.value
-    }
-    
-    if (filterForm.value.status) {
-      params.status = filterForm.value.status
-    }
-    
-    if (filterForm.value.time_status) {
-      params.time_status = filterForm.value.time_status
-    }
-
-    if (filterForm.value.time_slot) {
-      params.time_slot = filterForm.value.time_slot
-    }
-    
-    const response = await taskApi.getTasks(params)
+    const response = await axios.get('/api/tasks', {
+      params: {
+        page: currentPage.value,
+        page_size: pageSize.value,
+        ...filterForm.value
+      }
+    })
     tasks.value = response.data
-    total.value = response.headers['x-total-count'] || 0
   } catch (error) {
-    ElMessage.error('获取任务列表失败')
-    console.error('Error fetching tasks:', error)
+    ElMessage.error('加载任务列表失败')
   } finally {
     loading.value = false
   }
 }
 
-const handleFilter = () => {
-  currentPage.value = 1
-  fetchTasks()
-}
-
-const resetFilter = () => {
-  filterForm.value = {
-    status: '',
-    time_status: '',
-    time_slot: ''
-  }
-  handleFilter()
-}
-
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  fetchTasks()
-}
-
-const handleCurrentChange = (val) => {
-  currentPage.value = val
-  fetchTasks()
-}
-
-const handleEdit = (row) => {
-  router.push(`/task/${row.id}`)
-}
-
-const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要删除这个任务吗？', '提示', {
-      type: 'warning'
-    })
-    await taskApi.deleteTask(row.id)
-    ElMessage.success('删除成功')
-    fetchTasks()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
-  }
-}
-
 onMounted(() => {
-  fetchTasks()
+  loadTasks()
 })
 </script>
 
@@ -333,44 +334,24 @@ onMounted(() => {
   padding: 20px;
 }
 
-.card-header {
+.task-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.view-switch {
   margin-bottom: 20px;
 }
 
-.statistics {
-  margin-bottom: 20px;
-}
-
-.stat-container {
+.header-actions {
   display: flex;
-  justify-content: space-around;
+  gap: 10px;
+  align-items: center;
 }
 
-.stat-item {
-  text-align: center;
+.search-input {
+  width: 300px;
 }
 
-.stat-item .label {
-  display: block;
-  color: #909399;
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-
-.stat-item .value {
-  display: block;
-  font-size: 24px;
-  font-weight: bold;
-  color: #409EFF;
-}
-
-.filter-form {
+.filter-card {
   margin-bottom: 20px;
 }
 
@@ -378,89 +359,5 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
-}
-
-.calendar-container {
-  margin-top: 20px;
-}
-
-.calendar-cell {
-  height: 100%;
-  padding: 4px;
-}
-
-.calendar-cell .date {
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.calendar-cell .tasks {
-  max-height: 100px;
-  overflow-y: auto;
-}
-
-.task-item {
-  font-size: 12px;
-  padding: 4px;
-  margin-bottom: 4px;
-  border-radius: 4px;
-  border-left: 3px solid;
-}
-
-.fixed-time {
-  background-color: #fef0f0;
-  border-left-color: #f56c6c;
-}
-
-.flexible-time {
-  background-color: #f0f9eb;
-  border-left-color: #67c23a;
-}
-
-.locked {
-  background-color: #f4f4f5;
-  border-left-color: #909399;
-}
-
-.task-time {
-  font-weight: bold;
-  margin-bottom: 2px;
-}
-
-.task-name {
-  margin-bottom: 2px;
-}
-
-.task-status {
-  display: inline-block;
-  padding: 0 4px;
-  border-radius: 2px;
-  font-size: 10px;
-  margin-bottom: 2px;
-}
-
-.task-priority {
-  font-size: 10px;
-  color: #909399;
-}
-
-.status-pending {
-  background-color: #fdf6ec;
-  color: #e6a23c;
-}
-
-.status-completed {
-  background-color: #f0f9eb;
-  color: #67c23a;
-}
-
-.status-follow_up {
-  background-color: #f4f4f5;
-  color: #909399;
-}
-
-.status-cancelled {
-  background-color: #fef0f0;
-  color: #f56c6c;
 }
 </style> 
