@@ -28,7 +28,8 @@ Thumbs.db
 # 日志文件
 *.log
 logs/
-client/backend/logs/
+server/service/logs/
+client/service/logs/
 
 # 测试和覆盖率报告
 coverage/
@@ -47,10 +48,24 @@ htmlcov/
 temp/
 tmp/
 
-# 后端构建产物
-client/backend/__pycache__/
-client/backend/build/
-client/backend/dist/
+# 构建产物
+# 服务端
+server/service/__pycache__/
+server/service/build/
+server/service/dist/
+server/AI/__pycache__/
+server/AI/build/
+server/AI/dist/
+
+# 客户端
+client/service/__pycache__/
+client/service/build/
+client/service/dist/
+client/webui/dist/
+client/webui/node_modules/
+client/webui/.next/
+client/webui/.nuxt/
+client/webui/.output/
 
 # Node
 node_modules/
@@ -69,4 +84,20 @@ dist-ssr/
 # 文档生成
 docs/_build/
 docs/_static/
-docs/_templates/ 
+docs/_templates/
+
+# 模型文件
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+*.ckpt
+*.weights
+*.h5
+*.hdf5
+*.tflite
+*.pb
+*.meta
+*.index
+*.data-00000-of-00001 
