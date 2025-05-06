@@ -1,0 +1,43 @@
+@startuml 优先级管理
+
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam sequenceParticipant underline
+
+actor 用户
+participant "前端界面" as Frontend
+participant "优先级管理模块" as PriorityManager
+participant "数据库" as Database
+
+用户 -> Frontend: 选择优先级设置方式
+Frontend -> PriorityManager: 发送优先级设置请求
+
+alt 非固定时间段任务
+    alt 区间选择
+        PriorityManager -> PriorityManager: 获取区间配置
+        PriorityManager -> PriorityManager: 获取区间最高值
+        PriorityManager -> PriorityManager: 分配新优先级(区间最高值 - step)
+    else 比较选择
+        PriorityManager -> PriorityManager: 获取参考任务优先级
+        Frontend -> 用户: 显示参考任务优先级
+        用户 -> Frontend: 选择高于/低于参考任务
+        Frontend -> PriorityManager: 发送比较选择结果
+        PriorityManager -> PriorityManager: 分配新优先级(最近的未使用值)
+    else 精确设置
+        用户 -> Frontend: 输入具体数值
+        Frontend -> PriorityManager: 发送具体数值
+        PriorityManager -> PriorityManager: 检查数值唯一性
+    end
+else 固定时间段任务
+    PriorityManager -> Database: 保存任务信息
+    Database --> PriorityManager: 返回保存结果
+end
+
+PriorityManager -> PriorityManager: 检查数值是否在有效范围
+PriorityManager -> Database: 保存优先级记录
+Database --> PriorityManager: 返回操作结果
+PriorityManager --> Frontend: 返回设置结果
+Frontend --> 用户: 显示设置结果
+用户 -> 用户: 确认设置
+
+@enduml 
