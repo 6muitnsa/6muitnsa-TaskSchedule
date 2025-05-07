@@ -198,6 +198,34 @@
           </el-form-item>
         </el-form-item>
 
+        <!-- 远程访问设置 -->
+        <el-divider>远程访问设置</el-divider>
+        <el-form-item label="远程访问">
+          <el-button 
+            type="primary" 
+            @click="handleRemoteAccess"
+            :loading="remoteLoading"
+          >
+            {{ isRemoteRunning ? '停止远程访问' : '启动远程访问' }}
+          </el-button>
+        </el-form-item>
+
+        <template v-if="remoteUrl">
+          <el-form-item label="访问地址">
+            <el-input v-model="remoteUrl" readonly>
+              <template #append>
+                <el-button @click="copyRemoteUrl">复制</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <el-form-item label="二维码">
+            <div class="qrcode-container">
+              <img :src="'data:image/png;base64,' + remoteQrcode" alt="访问二维码" />
+            </div>
+          </el-form-item>
+        </template>
+
         <!-- 配置2：时间预测 -->
         <el-form-item label="时间预测">
           <el-switch v-model="form.enableTimePrediction" />
@@ -354,6 +382,12 @@ const routeForm = reactive({
   time: 15
 })
 
+// 远程访问相关
+const remoteLoading = ref(false)
+const isRemoteRunning = ref(false)
+const remoteUrl = ref('')
+const remoteQrcode = ref('')
+
 // 处理优先级区间数量变化
 const handlePriorityRangeCountChange = (value) => {
   const currentLength = form.priorityRanges.length
@@ -428,11 +462,72 @@ const saveRoute = () => {
   routeDialogVisible.value = false
 }
 
+// 处理远程访问
+const handleRemoteAccess = async () => {
+  try {
+    remoteLoading.value = true
+    if (isRemoteRunning.value) {
+      // 停止远程访问
+      const response = await fetch('/api/remote/stop', {
+        method: 'POST'
+      })
+      const data = await response.json()
+      if (data.success) {
+        isRemoteRunning.value = false
+        remoteUrl.value = ''
+        remoteQrcode.value = ''
+        ElMessage.success('远程访问已停止')
+      }
+    } else {
+      // 启动远程访问
+      const response = await fetch('/api/remote/start', {
+        method: 'POST'
+      })
+      const data = await response.json()
+      if (data.success) {
+        isRemoteRunning.value = true
+        remoteUrl.value = data.url
+        remoteQrcode.value = data.qrcode
+        ElMessage.success('远程访问已启动')
+      }
+    }
+  } catch (error) {
+    ElMessage.error('操作失败：' + error.message)
+  } finally {
+    remoteLoading.value = false
+  }
+}
+
+// 复制远程访问地址
+const copyRemoteUrl = () => {
+  navigator.clipboard.writeText(remoteUrl.value)
+    .then(() => ElMessage.success('地址已复制'))
+    .catch(() => ElMessage.error('复制失败'))
+}
+
+// 检查远程访问状态
+const checkRemoteStatus = async () => {
+  try {
+    const response = await fetch('/api/remote/status')
+    const data = await response.json()
+    if (data.success) {
+      isRemoteRunning.value = data.is_running
+      if (data.is_running) {
+        remoteUrl.value = data.url
+        remoteQrcode.value = data.qrcode
+      }
+    }
+  } catch (error) {
+    console.error('获取远程访问状态失败：', error)
+  }
+}
+
 // 获取设置
 onMounted(async () => {
   try {
     const settings = await settingsStore.fetchSettings()
     Object.assign(form, settings)
+    await checkRemoteStatus()
   } catch (error) {
     console.error('获取设置失败:', error)
   }
@@ -511,6 +606,17 @@ const handleReset = async () => {
       padding: 10px;
       border-radius: 4px;
       margin: 10px 0;
+    }
+  }
+
+  .qrcode-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    
+    img {
+      max-width: 200px;
+      height: auto;
     }
   }
 }

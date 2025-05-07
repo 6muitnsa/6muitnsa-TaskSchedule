@@ -1,0 +1,19 @@
+{
+  "paths": {
+    "data_dir": "d:\\Documents\\程序\\6muitnsa-TaskSchedule\\client\\api\\data",
+    "logs_dir": "d:\\Documents\\程序\\6muitnsa-TaskSchedule\\client\\api\\logs",
+    "backup_dir": "d:\\Documents\\程序\\6muitnsa-TaskSchedule\\client\\api\\backups"
+  },
+  "scheduler": {
+    "enabled": true,
+    "interval": 300,
+    "max_retries": 3
+  },
+  "notifications": {
+    "enabled": true,
+    "sound": true,
+    "desktop": true
+  },
+  "theme": "light",
+  "language": "zh_CN"
+}

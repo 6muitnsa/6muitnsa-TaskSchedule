@@ -287,6 +287,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { taskApi } from '@/api'
 
 const router = useRouter()
 const formRef = ref(null)
@@ -416,11 +417,50 @@ const handleSubmit = async () => {
   
   try {
     await formRef.value.validate()
-    // TODO: 实现创建任务的API调用
+    
+    // 构建任务数据
+    const taskData = {
+      name: form.name || form.id,
+      description: form.description,
+      priority: form.priorityRange,
+      tags: form.tags,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      timeInfo: {
+        estimatedDuration: form.estimatedTime,
+        commuteTime: 0,
+        restTime: form.restTime
+      },
+      complexInfo: {
+        period: {
+          type: cycleType.value === 'none' ? null : cycleType.value,
+          value: cycleType.value === 'simple' ? {
+            number: form.cycleNumber,
+            unit: form.cycleUnit
+          } : cycleType.value === 'complex' ? {
+            type: form.cycleComplexType,
+            values: form.cycleComplexValues
+          } : null
+        },
+        completionTimes: {
+          type: completionType.value,
+          value: completionType.value === 'fixed' ? form.completionCount : null
+        },
+        timeSlot: form.timeRange.length === 2 ? {
+          start: form.timeRange[0],
+          end: form.timeRange[1]
+        } : null
+      }
+    }
+    
+    // 调用API创建任务
+    await taskApi.createTask(taskData)
+    
     ElMessage.success('任务创建成功')
     router.push('/tasks')
   } catch (error) {
-    console.error('表单验证失败:', error)
+    console.error('创建任务失败:', error)
+    ElMessage.error('创建任务失败：' + (error.response?.data?.message || error.message))
   }
 }
 

@@ -301,7 +301,7 @@ const efficiencyChartOptions = computed(() => ({
 // 更新趋势图表
 const updateTrendChart = async () => {
   try {
-    const response = await axios.get(`/api/statistics/trend?range=${trendTimeRange.value}`)
+    const response = await api.get(`/statistics/trend?range=${trendTimeRange.value}`)
     // TODO: 更新图表数据
   } catch (error) {
     ElMessage.error('获取趋势数据失败：' + error.message)
@@ -311,7 +311,7 @@ const updateTrendChart = async () => {
 // 更新类型图表
 const updateTypeChart = async () => {
   try {
-    const response = await axios.get(`/api/statistics/type?view=${typeChartView.value}`)
+    const response = await api.get(`/statistics/type?view=${typeChartView.value}`)
     // TODO: 更新图表数据
   } catch (error) {
     ElMessage.error('获取类型数据失败：' + error.message)
@@ -321,7 +321,7 @@ const updateTypeChart = async () => {
 // 更新效率图表
 const updateEfficiencyChart = async () => {
   try {
-    const response = await axios.get(`/api/statistics/efficiency?metric=${efficiencyMetric.value}&range=${efficiencyTimeRange.value}`)
+    const response = await api.get(`/statistics/efficiency?metric=${efficiencyMetric.value}&range=${efficiencyTimeRange.value}`)
     // TODO: 更新图表数据
   } catch (error) {
     ElMessage.error('获取效率数据失败：' + error.message)
@@ -331,7 +331,7 @@ const updateEfficiencyChart = async () => {
 // 刷新所有数据
 const refreshData = async () => {
   try {
-    const response = await axios.get('/api/statistics/overview')
+    const response = await api.get('/statistics/overview')
     statCards.value = response.data.cards
     await Promise.all([
       updateTrendChart(),

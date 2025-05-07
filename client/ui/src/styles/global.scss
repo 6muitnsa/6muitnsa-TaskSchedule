@@ -1,13 +1,14 @@
-// 全局样式文件
-
-// 变量定义
+/* 全局样式 */
 :root {
-  // 主题色
-  --primary-color: #409EFF;
-  --success-color: #67C23A;
-  --warning-color: #E6A23C;
-  --danger-color: #F56C6C;
+  --primary-color: #409eff;
+  --success-color: #67c23a;
+  --warning-color: #e6a23c;
+  --danger-color: #f56c6c;
   --info-color: #909399;
+  --text-color: #303133;
+  --text-color-secondary: #606266;
+  --border-color: #dcdfe6;
+  --background-color: #f5f7fa;
 
   // 文字颜色
   --text-primary: #303133;
@@ -58,30 +59,6 @@
   --transition-timing-function: ease-in-out;
 }
 
-// 暗色主题
-[data-theme="dark"] {
-  --primary-color: #409EFF;
-  --success-color: #67C23A;
-  --warning-color: #E6A23C;
-  --danger-color: #F56C6C;
-  --info-color: #909399;
-
-  --text-primary: #E5EAF3;
-  --text-regular: #CFD3DC;
-  --text-secondary: #A3A6AD;
-  --text-placeholder: #8D9095;
-
-  --border-color-base: #4C4D4F;
-  --border-color-light: #414243;
-  --border-color-lighter: #363637;
-  --border-color-extra-light: #2B2B2C;
-
-  --background-color-base: #1D1E1F;
-  --background-color-light: #2B2B2C;
-  --background-color-white: #141414;
-}
-
-// 基础样式重置
 * {
   margin: 0;
   padding: 0;
@@ -90,12 +67,161 @@
 
 html, body {
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-  background-color: var(--background-color-base);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+}
+
+#app {
+  height: 100%;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+// 移动端适配
+html {
+  font-size: 16px;
+}
+
+// 媒体查询，根据屏幕宽度调整根字体大小
+@media screen and (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  html {
+    font-size: 12px;
+  }
+}
+
+// 基础样式重置
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+// 移动端触摸优化
+button, a {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+// 禁用长按菜单
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+// 移动端布局类
+.mobile-container {
+  padding: 1rem;
+}
+
+.mobile-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+// 响应式工具类
+.hide-on-mobile {
+  @media screen and (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.show-on-mobile {
+  @media screen and (min-width: 769px) {
+    display: none !important;
+  }
+}
+
+// 弹性布局工具类
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.align-center {
+  align-items: center;
+}
+
+// 间距工具类
+.m-1 { margin: 0.5rem; }
+.m-2 { margin: 1rem; }
+.m-3 { margin: 1.5rem; }
+.m-4 { margin: 2rem; }
+
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+.p-4 { padding: 2rem; }
+
+// 文字工具类
+.text-primary { color: var(--text-primary); }
+.text-regular { color: var(--text-regular); }
+.text-secondary { color: var(--text-secondary); }
+.text-placeholder { color: var(--text-placeholder); }
+
+.text-sm { font-size: var(--font-size-small); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-large); }
+.text-xl { font-size: var(--font-size-extra-large); }
+
+// 过渡动画
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-duration) var(--transition-timing-function);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 // 响应式布局
@@ -136,10 +262,6 @@ html, body {
   align-items: center;
 }
 
-.justify-center {
-  justify-content: center;
-}
-
 .justify-between {
   justify-content: space-between;
 }
@@ -159,17 +281,6 @@ html, body {
 .gap-4 {
   gap: var(--spacing-medium);
 }
-
-// 间距工具类
-.m-1 { margin: var(--spacing-extra-small); }
-.m-2 { margin: var(--spacing-small); }
-.m-3 { margin: var(--spacing-base); }
-.m-4 { margin: var(--spacing-medium); }
-
-.p-1 { padding: var(--spacing-extra-small); }
-.p-2 { padding: var(--spacing-small); }
-.p-3 { padding: var(--spacing-base); }
-.p-4 { padding: var(--spacing-medium); }
 
 // 文字工具类
 .text-primary { color: var(--text-primary); }
