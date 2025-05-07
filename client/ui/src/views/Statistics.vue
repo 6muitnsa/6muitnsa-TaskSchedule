@@ -173,7 +173,7 @@ const trendChartOptions = computed(() => ({
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    data: []
   },
   yAxis: {
     type: 'value'
@@ -187,7 +187,7 @@ const trendChartOptions = computed(() => ({
       emphasis: {
         focus: 'series'
       },
-      data: [10, 15, 8, 12, 9, 5, 7]
+      data: []
     },
     {
       name: '进行中',
@@ -197,7 +197,7 @@ const trendChartOptions = computed(() => ({
       emphasis: {
         focus: 'series'
       },
-      data: [5, 7, 3, 4, 6, 2, 3]
+      data: []
     },
     {
       name: '待开始',
@@ -207,7 +207,7 @@ const trendChartOptions = computed(() => ({
       emphasis: {
         focus: 'series'
       },
-      data: [3, 4, 2, 5, 3, 1, 2]
+      data: []
     }
   ]
 }))
@@ -215,46 +215,25 @@ const trendChartOptions = computed(() => ({
 // 任务类型分布图表配置
 const typeChartOptions = computed(() => ({
   tooltip: {
-    trigger: 'item',
-    formatter: '{a} <br/>{b}: {c} ({d}%)'
+    trigger: 'item'
   },
   legend: {
     orient: 'vertical',
-    left: 'left',
-    data: ['工作', '学习', '生活', '娱乐', '其他']
+    left: 'left'
   },
   series: [
     {
       name: '任务类型',
       type: 'pie',
-      radius: ['50%', '70%'],
-      avoidLabelOverlap: false,
-      itemStyle: {
-        borderRadius: 10,
-        borderColor: '#fff',
-        borderWidth: 2
-      },
-      label: {
-        show: false,
-        position: 'center'
-      },
+      radius: '50%',
+      data: [],
       emphasis: {
-        label: {
-          show: true,
-          fontSize: '20',
-          fontWeight: 'bold'
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
         }
-      },
-      labelLine: {
-        show: false
-      },
-      data: [
-        { value: 35, name: '工作' },
-        { value: 25, name: '学习' },
-        { value: 20, name: '生活' },
-        { value: 15, name: '娱乐' },
-        { value: 5, name: '其他' }
-      ]
+      }
     }
   ]
 }))
@@ -275,28 +254,56 @@ const efficiencyChartOptions = computed(() => ({
   },
   xAxis: {
     type: 'category',
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    data: []
   },
   yAxis: {
-    type: 'value',
-    max: 100,
-    axisLabel: {
-      formatter: '{value}%'
-    }
+    type: 'value'
   },
   series: [
     {
-      name: efficiencyMetric.value === 'completion' ? '完成率' :
-            efficiencyMetric.value === 'punctuality' ? '准时率' : '满意度',
+      name: '效率值',
       type: 'bar',
-      barWidth: '60%',
-      data: [85, 92, 78, 88, 95, 82, 90],
+      data: [],
       itemStyle: {
-        borderRadius: [4, 4, 0, 0]
+        color: '#409EFF'
       }
     }
   ]
 }))
+
+// 获取统计数据
+const getStatistics = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    const response = await statisticsApi.getStatistics()
+    const data = response.data
+    
+    // 更新统计卡片
+    statCards.value[0].value = data.task_stats.total.toString()
+    statCards.value[1].value = data.task_stats.completed.toString()
+    statCards.value[2].value = `${Math.round(data.focus_stats.average)}h`
+    statCards.value[3].value = data.satisfaction.toString()
+    
+    // 更新趋势图数据
+    trendChartOptions.value.xAxis.data = data.trend.dates
+    trendChartOptions.value.series[0].data = data.trend.completed
+    trendChartOptions.value.series[1].data = data.trend.in_progress
+    trendChartOptions.value.series[2].data = data.trend.pending
+    
+    // 更新类型分布图数据
+    typeChartOptions.value.series[0].data = data.type_distribution
+    
+    // 更新效率分析图数据
+    efficiencyChartOptions.value.xAxis.data = data.efficiency.dates
+    efficiencyChartOptions.value.series[0].data = data.efficiency.values
+  } catch (err) {
+    console.error('获取统计数据失败:', err)
+    error.value = '获取统计数据失败，请检查网络连接'
+  } finally {
+    loading.value = false
+  }
+}
 
 // 更新趋势图表
 const updateTrendChart = async () => {
@@ -346,7 +353,7 @@ const refreshData = async () => {
 
 // 初始化
 onMounted(() => {
-  refreshData()
+  getStatistics()
 })
 </script>
 

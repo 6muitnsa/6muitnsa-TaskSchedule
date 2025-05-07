@@ -7,12 +7,46 @@
       <template #header>
         <div class="card-header">
           <span>批量操作</span>
+          <el-button-group>
+            <el-button type="danger" :disabled="!selectedTasks.length" @click="handleBatchDelete">批量删除</el-button>
+            <el-button type="primary" :disabled="!selectedTasks.length" @click="handleBatchComplete">批量完成</el-button>
+          </el-button-group>
         </div>
       </template>
-      <el-button-group>
-        <el-button type="danger" @click="handleBatchDelete">批量删除</el-button>
-        <el-button type="primary" @click="handleBatchComplete">批量完成</el-button>
-      </el-button-group>
+      <div class="batch-content">
+        <el-table
+          :data="tasks"
+          style="width: 100%"
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column type="selection" width="55" />
+          <el-table-column prop="title" label="任务名称" min-width="200">
+            <template #default="{ row }">
+              <div class="task-name">
+                <span>{{ row.title }}</span>
+                <el-tag
+                  v-for="tag in row.tags"
+                  :key="tag"
+                  size="small"
+                  class="task-tag"
+                >
+                  {{ tag }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="priority" label="优先级" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getPriorityType(row.priority)">{{ row.priority }}</el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </el-card>
 
     <!-- 标签管理 -->
@@ -64,21 +98,6 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
-
-    <!-- 数据同步 -->
-    <el-card class="sync-management">
-      <template #header>
-        <div class="card-header">
-          <span>数据同步</span>
-        </div>
-      </template>
-      <div class="sync-info">
-        <p>同步URL：{{ syncUrl }}</p>
-        <div class="qrcode-container">
-          <qrcode-vue :value="syncUrl" :size="200" level="H" />
-        </div>
-      </div>
     </el-card>
 
     <!-- 标签添加对话框 -->
@@ -133,13 +152,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import QrcodeVue from 'qrcode.vue'
 import { api } from '@/api'
 
 // 状态
 const tags = ref([])
 const locations = ref([])
-const syncUrl = ref('')
+const tasks = ref([])
+const selectedTasks = ref([])
 const tagDialogVisible = ref(false)
 const locationDialogVisible = ref(false)
 const isEditingLocation = ref(false)
@@ -160,13 +179,50 @@ const fetchData = async () => {
     const locationsResponse = await api.get('/locations')
     locations.value = locationsResponse.data
 
-    // 获取同步URL
-    const syncResponse = await api.get('/sync/url')
-    syncUrl.value = syncResponse.data.url
+    // 获取任务列表
+    const tasksResponse = await api.get('/tasks')
+    tasks.value = tasksResponse.data
   } catch (error) {
     ElMessage.error('获取数据失败')
     console.error(error)
   }
+}
+
+// 获取状态类型
+const getStatusType = (status) => {
+  const types = {
+    'not_started': 'info',
+    'in_progress': 'warning',
+    'completed': 'success',
+    'abandoned': 'danger'
+  }
+  return types[status] || 'info'
+}
+
+// 获取状态文本
+const getStatusText = (status) => {
+  const texts = {
+    'not_started': '未开始',
+    'in_progress': '进行中',
+    'completed': '已完成',
+    'abandoned': '已放弃'
+  }
+  return texts[status] || status
+}
+
+// 获取优先级类型
+const getPriorityType = (priority) => {
+  const types = {
+    'high': 'danger',
+    'medium': 'warning',
+    'low': 'success'
+  }
+  return types[priority] || 'info'
+}
+
+// 处理选择变化
+const handleSelectionChange = (selection) => {
+  selectedTasks.value = selection
 }
 
 // 标签相关方法
@@ -258,8 +314,10 @@ const handleBatchDelete = async () => {
     await ElMessageBox.confirm('确定要删除选中的任务吗？', '警告', {
       type: 'warning'
     })
-    await api.post('/tasks/batch-delete')
+    const taskIds = selectedTasks.value.map(task => task.id)
+    await api.post('/tasks/batch-delete', { task_ids: taskIds })
     ElMessage.success('批量删除成功')
+    await fetchData()
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('批量删除失败')
@@ -270,8 +328,10 @@ const handleBatchDelete = async () => {
 
 const handleBatchComplete = async () => {
   try {
-    await api.post('/tasks/batch-complete')
+    const taskIds = selectedTasks.value.map(task => task.id)
+    await api.post('/tasks/batch-complete', { task_ids: taskIds })
     ElMessage.success('批量完成成功')
+    await fetchData()
   } catch (error) {
     ElMessage.error('批量完成失败')
     console.error(error)
@@ -321,17 +381,17 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.sync-management {
-  margin-bottom: 20px;
-}
-
-.sync-info {
-  text-align: center;
-}
-
-.qrcode-container {
+.batch-content {
   margin-top: 20px;
+}
+
+.task-name {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-tag {
+  margin-left: 4px;
 }
 </style> 

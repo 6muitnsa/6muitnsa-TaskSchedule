@@ -238,36 +238,55 @@ const statistics = ref({
 })
 
 // 统计卡片数据
-const statCards = computed(() => [
-  {
-    title: '总任务数',
-    value: statistics.value.task_stats.total.toString(),
-    icon: 'Calendar',
-    color: '#409EFF',
-    trend: 0
-  },
-  {
-    title: '已完成',
-    value: statistics.value.task_stats.completed.toString(),
-    icon: 'Check',
-    color: '#67C23A',
-    trend: 0
-  },
-  {
-    title: '平均用时',
-    value: `${Math.round(statistics.value.focus_stats.average)}h`,
-    icon: 'Timer',
-    color: '#E6A23C',
-    trend: statistics.value.focus_stats.trend
-  },
-  {
-    title: '休息时间',
-    value: `${Math.round(statistics.value.rest_stats.average)}h`,
-    icon: 'Star',
-    color: '#F56C6C',
-    trend: statistics.value.rest_stats.trend
+const statCards = computed(() => {
+  const taskStats = statistics.value?.task_stats || {
+    total: 0,
+    completed: 0,
+    in_progress: 0,
+    abandoned: 0
   }
-])
+  const focusStats = statistics.value?.focus_stats || {
+    average: 0,
+    total: 0,
+    trend: 0
+  }
+  const restStats = statistics.value?.rest_stats || {
+    average: 0,
+    total: 0,
+    trend: 0
+  }
+
+  return [
+    {
+      title: '总任务数',
+      value: taskStats.total.toString(),
+      icon: 'Calendar',
+      color: '#409EFF',
+      trend: 0
+    },
+    {
+      title: '已完成',
+      value: taskStats.completed.toString(),
+      icon: 'Check',
+      color: '#67C23A',
+      trend: 0
+    },
+    {
+      title: '平均用时',
+      value: `${Math.round(focusStats.average)}h`,
+      icon: 'Timer',
+      color: '#E6A23C',
+      trend: focusStats.trend
+    },
+    {
+      title: '休息时间',
+      value: `${Math.round(restStats.average)}h`,
+      icon: 'Star',
+      color: '#F56C6C',
+      trend: restStats.trend
+    }
+  ]
+})
 
 // 图表相关数据
 const trendTimeRange = ref('week')
@@ -298,7 +317,7 @@ const trendChartOptions = computed(() => ({
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    data: []
   },
   yAxis: {
     type: 'value'
@@ -312,7 +331,7 @@ const trendChartOptions = computed(() => ({
       emphasis: {
         focus: 'series'
       },
-      data: [10, 15, 8, 12, 9, 5, 7]
+      data: []
     },
     {
       name: '进行中',
@@ -322,7 +341,7 @@ const trendChartOptions = computed(() => ({
       emphasis: {
         focus: 'series'
       },
-      data: [5, 7, 3, 4, 6, 2, 3]
+      data: []
     },
     {
       name: '待开始',
@@ -332,7 +351,7 @@ const trendChartOptions = computed(() => ({
       emphasis: {
         focus: 'series'
       },
-      data: [3, 4, 2, 5, 3, 1, 2]
+      data: []
     }
   ]
 }))
@@ -351,12 +370,7 @@ const typeChartOptions = computed(() => ({
       name: '任务类型',
       type: 'pie',
       radius: '50%',
-      data: [
-        { value: 35, name: '工作' },
-        { value: 25, name: '学习' },
-        { value: 20, name: '生活' },
-        { value: 15, name: '其他' }
-      ],
+      data: [],
       emphasis: {
         itemStyle: {
           shadowBlur: 10,
@@ -384,7 +398,7 @@ const efficiencyChartOptions = computed(() => ({
   },
   xAxis: {
     type: 'category',
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    data: []
   },
   yAxis: {
     type: 'value'
@@ -393,7 +407,7 @@ const efficiencyChartOptions = computed(() => ({
     {
       name: '效率值',
       type: 'bar',
-      data: [85, 92, 78, 88, 95, 82, 90],
+      data: [],
       itemStyle: {
         color: '#409EFF'
       }
@@ -404,35 +418,24 @@ const efficiencyChartOptions = computed(() => ({
 // 最近任务
 const recentTasks = ref([])
 
-// 待办事项
+// 待办事项列表
 const todoList = ref([])
 
 // 获取统计数据
 const getStatistics = async () => {
   try {
+    loading.value = true
+    error.value = null
     const response = await statisticsApi.getOverview()
-    statistics.value = response.data
-  } catch (error) {
-    console.error('获取统计数据失败:', error)
-    // 使用模拟数据
-    statistics.value = {
-      task_stats: {
-        total: 0,
-        completed: 0,
-        in_progress: 0,
-        abandoned: 0
-      },
-      focus_stats: {
-        average: 0,
-        total: 0,
-        trend: 0
-      },
-      rest_stats: {
-        average: 0,
-        total: 0,
-        trend: 0
-      }
+    if (response && response.data) {
+      statistics.value = response.data
     }
+  } catch (err) {
+    console.error('获取统计数据失败:', err)
+    error.value = '获取统计数据失败，请检查网络连接'
+    // 保持默认值
+  } finally {
+    loading.value = false
   }
 }
 
@@ -441,41 +444,14 @@ const getRecentTasks = async () => {
   try {
     loading.value = true
     error.value = null
-    
-    // 尝试从API获取数据
-    try {
-      const response = await taskApi.getRecentTasks()
+    const response = await taskApi.getRecentTasks()
+    if (response && response.data) {
       recentTasks.value = response.data
-    } catch (apiError) {
-      console.warn('API获取最近任务失败，使用模拟数据:', apiError)
-      // 使用模拟数据
-      recentTasks.value = [
-        {
-          id: 1,
-          title: '完成项目文档',
-          status: 'in_progress',
-          priority: 'high',
-          deadline: '2024-03-20'
-        },
-        {
-          id: 2,
-          title: '代码审查',
-          status: 'pending',
-          priority: 'medium',
-          deadline: '2024-03-21'
-        },
-        {
-          id: 3,
-          title: '团队会议',
-          status: 'completed',
-          priority: 'low',
-          deadline: '2024-03-19'
-        }
-      ]
     }
   } catch (err) {
     console.error('获取最近任务失败:', err)
     error.value = '获取最近任务失败，请检查网络连接'
+    recentTasks.value = []
   } finally {
     loading.value = false
   }
@@ -486,41 +462,18 @@ const getTodoList = async () => {
   try {
     loading.value = true
     error.value = null
-    
-    // 尝试从API获取数据
-    try {
-      const response = await taskApi.getTodoList()
+    const response = await taskApi.getTasks({
+      status: 'not_started',
+      limit: 10,
+      sort: 'priority:desc,created_at:desc'
+    })
+    if (response && response.data) {
       todoList.value = response.data
-    } catch (apiError) {
-      console.warn('API获取待办事项失败，使用模拟数据:', apiError)
-      // 使用模拟数据
-      todoList.value = [
-        {
-          id: 1,
-          title: '准备周会演示文稿',
-          completed: false,
-          priority: 'high',
-          deadline: '今天 14:00'
-        },
-        {
-          id: 2,
-          title: '回复客户邮件',
-          completed: false,
-          priority: 'medium',
-          deadline: '今天 16:00'
-        },
-        {
-          id: 3,
-          title: '更新项目进度',
-          completed: true,
-          priority: 'low',
-          deadline: '明天 10:00'
-        }
-      ]
     }
   } catch (err) {
     console.error('获取待办事项失败:', err)
     error.value = '获取待办事项失败，请检查网络连接'
+    todoList.value = []
   } finally {
     loading.value = false
   }
@@ -617,11 +570,12 @@ const createTask = () => {
 // 处理待办事项状态变化
 const handleTodoStatusChange = async (todo) => {
   try {
-    await taskApi.updateTodoStatus(todo.id, todo.completed)
+    await taskApi.updateTaskStatus(todo.id, todo.completed ? 'completed' : 'not_started')
     ElMessage.success('更新成功')
+    await getTodoList()
   } catch (err) {
     console.error('更新待办事项状态失败:', err)
-    ElMessage.error('更新失败，请重试')
+    ElMessage.error('更新失败')
     todo.completed = !todo.completed // 恢复状态
   }
 }

@@ -4,9 +4,11 @@ import json
 from datetime import datetime
 from utils.response import success_response, error_response
 from utils.logger import get_logger
+from services.tag_service import TagService
 
 bp = Blueprint('tasks', __name__)
 logger = get_logger('task_routes')
+tag_service = TagService()
 
 def safe_get(data, *keys, default=None):
     """安全地获取嵌套字典中的值"""
@@ -222,7 +224,7 @@ def update_task_tags(task_id):
 def complete_task(task_id):
     """完成任务"""
     try:
-        data = json.loads(request.get_data())
+        data = request.get_json(silent=True) or {}
         actual_time = data.get('actual_time')
         logger.info(f'开始完成任务，ID: {task_id}, 实际用时: {actual_time}')
         
@@ -265,5 +267,35 @@ def abandon_task(task_id):
     except Exception as e:
         logger.error(f'放弃任务失败，ID: {task_id}, 错误: {str(e)}', exc_info=True)
         return error_response(message=f'放弃任务失败: {str(e)}')
+
+@bp.route('/tags', methods=['GET'])
+def get_tags():
+    """获取所有标签"""
+    try:
+        logger.info('开始获取标签列表')
+        tags = tag_service.get_all_tags()
+        logger.info(f'成功获取标签列表，共{len(tags)}条记录')
+        return success_response(data=tags, message='获取标签列表成功')
+    except Exception as e:
+        logger.error(f'获取标签列表失败: {str(e)}', exc_info=True)
+        return error_response(message=f'获取标签列表失败: {str(e)}')
+
+@bp.route('/locations', methods=['GET'])
+def get_locations():
+    """获取所有位置"""
+    try:
+        logger.info('开始获取位置列表')
+        db = get_db()
+        cursor = db.execute('''
+            SELECT DISTINCT location
+            FROM tasks
+            WHERE location IS NOT NULL AND location != ''
+        ''')
+        locations = [row['location'] for row in cursor.fetchall() if row['location']]
+        logger.info(f'成功获取位置列表，共{len(locations)}条记录')
+        return success_response(data=locations, message='获取位置列表成功')
+    except Exception as e:
+        logger.error(f'获取位置列表失败: {str(e)}', exc_info=True)
+        return error_response(message=f'获取位置列表失败: {str(e)}')
 
 # ... 其他任务相关路由 

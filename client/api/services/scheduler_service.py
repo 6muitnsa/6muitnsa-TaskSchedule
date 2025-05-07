@@ -20,6 +20,14 @@ class SchedulerService:
         ''')
         db.commit()
 
+    def get_status(self):
+        """获取调度器状态"""
+        return {
+            'is_running': False,  # 这里可以根据实际情况返回调度器的运行状态
+            'last_run': None,     # 这里可以根据实际情况返回最后一次运行时间
+            'next_run': None      # 这里可以根据实际情况返回下一次运行时间
+        }
+
     def get_results(self):
         """获取调度结果"""
         db = get_db()

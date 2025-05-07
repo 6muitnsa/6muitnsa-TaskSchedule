@@ -284,7 +284,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { taskApi } from '@/api'
@@ -328,8 +328,8 @@ const newTag = ref('')
 const newLocation = ref('')
 
 // 可选的标签和地点
-const availableTags = ref(['工作', '学习', '生活', '文档'])
-const availableLocations = ref(['办公室', '家', '图书馆'])
+const availableTags = ref([])
+const availableLocations = ref([])
 
 // 优先级区间
 const priorityRanges = [
@@ -339,10 +339,7 @@ const priorityRanges = [
 ]
 
 // 现有任务
-const existingTasks = ref([
-  { id: 1, name: '完成项目文档' },
-  { id: 2, name: '每日阅读' }
-])
+const existingTasks = ref([])
 
 // 复合周期选项
 const cycleComplexOptions = computed(() => {
@@ -394,6 +391,37 @@ function addNewLocation() {
     newLocation.value = ''
   }
 }
+
+// 获取标签和地点列表
+const getTagsAndLocations = async () => {
+  try {
+    const response = await taskApi.getTagsAndLocations()
+    availableTags.value = response.data.tags
+    availableLocations.value = response.data.locations
+  } catch (err) {
+    console.error('获取标签和地点列表失败:', err)
+    ElMessage.error('获取标签和地点列表失败')
+  }
+}
+
+// 获取现有任务列表
+const getExistingTasks = async () => {
+  try {
+    const response = await taskApi.getTasks()
+    existingTasks.value = response.data
+  } catch (err) {
+    console.error('获取现有任务列表失败:', err)
+    ElMessage.error('获取现有任务列表失败')
+  }
+}
+
+// 初始化数据
+onMounted(async () => {
+  await Promise.all([
+    getTagsAndLocations(),
+    getExistingTasks()
+  ])
+})
 
 // 表单验证规则
 const rules = {

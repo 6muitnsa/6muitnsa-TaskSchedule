@@ -97,6 +97,7 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         color TEXT NOT NULL,
+        created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
     )
     ''')
@@ -177,7 +178,6 @@ def init_db():
     ''')
     
     db.commit()
-    db.close()
 
 def dict_factory(cursor, row):
     d = {}

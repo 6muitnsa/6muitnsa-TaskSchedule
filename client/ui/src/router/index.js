@@ -92,7 +92,7 @@ const routes = [
   {
     path: ROUTE_PATHS.TASK_CREATE,
     name: 'TaskCreate',
-    component: () => import('../views/tasks/Create.vue'),
+    component: () => import('../views/tasks/CreateTask.vue'),
     meta: { title: '创建任务' }
   },
   {

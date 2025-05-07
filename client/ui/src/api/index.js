@@ -40,6 +40,16 @@ export const taskApi = {
     return api.get('/tasks', { params })
   },
 
+  // 获取最近任务
+  getRecentTasks() {
+    return api.get('/tasks', { 
+      params: {
+        limit: 5,
+        sort: 'created_at:desc'
+      }
+    })
+  },
+
   // 获取单个任务
   getTask(id) {
     return api.get(`/tasks/${id}`)
@@ -86,8 +96,8 @@ export const taskApi = {
   },
 
   // 完成任务
-  completeTask(id, data = {}) {
-    return api.post(`/tasks/${id}/complete`, data)
+  completeTask(id, actualTime = null) {
+    return api.post(`/tasks/${id}/complete`, { actual_time: actualTime })
   },
 
   // 放弃任务
@@ -118,6 +128,19 @@ export const taskApi = {
   // 批量删除任务
   batchDelete(taskIds) {
     return api.post('/batch/delete', { task_ids: taskIds })
+  },
+
+  // 获取标签和地点列表
+  getTagsAndLocations() {
+    return Promise.all([
+      api.get('/tags'),
+      api.get('/locations')
+    ]).then(([tagsRes, locationsRes]) => ({
+      data: {
+        tags: tagsRes.data,
+        locations: locationsRes.data
+      }
+    }))
   }
 }
 

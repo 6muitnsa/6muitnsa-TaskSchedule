@@ -15,45 +15,59 @@
       </template>
 
       <!-- 视图切换和搜索筛选 -->
-      <div class="view-controls">
-        <el-radio-group v-model="currentView" @change="handleViewChange">
+      <div class="filter-bar">
+        <el-input
+          v-model="searchQuery"
+          placeholder="搜索任务"
+          clearable
+          @clear="handleSearch"
+          @keyup.enter="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+
+        <el-select v-model="filterStatus" placeholder="状态" clearable>
+          <el-option label="未开始" value="not_started" />
+          <el-option label="进行中" value="in_progress" />
+          <el-option label="已完成" value="completed" />
+          <el-option label="已放弃" value="abandoned" />
+        </el-select>
+
+        <el-select v-model="filterPriority" placeholder="优先级" clearable>
+          <el-option label="高" value="high" />
+          <el-option label="中" value="medium" />
+          <el-option label="低" value="low" />
+        </el-select>
+
+        <el-select v-model="filterTag" placeholder="标签" clearable>
+          <el-option
+            v-for="tag in tags"
+            :key="tag"
+            :label="tag"
+            :value="tag"
+          />
+        </el-select>
+
+        <el-select v-model="filterLocation" placeholder="位置" clearable>
+          <el-option
+            v-for="location in locations"
+            :key="location"
+            :label="location"
+            :value="location"
+          />
+        </el-select>
+
+        <el-button type="primary" @click="handleSearch">搜索</el-button>
+        <el-button @click="resetFilters">重置</el-button>
+      </div>
+
+      <div class="view-switcher">
+        <el-radio-group v-model="currentView" size="large">
           <el-radio-button label="list">列表视图</el-radio-button>
-          <el-radio-button label="month">月度视图</el-radio-button>
           <el-radio-button label="priority">优先级视图</el-radio-button>
         </el-radio-group>
-
-        <div class="search-filter">
-          <el-input
-            v-model="searchQuery"
-            placeholder="搜索任务"
-            prefix-icon="Search"
-            clearable
-            @clear="handleSearch"
-            @input="handleSearch"
-          />
-          <el-select v-model="filterTag" placeholder="标签筛选" clearable @change="handleFilter">
-            <el-option
-              v-for="tag in tags"
-              :key="tag"
-              :label="tag"
-              :value="tag"
-            />
-          </el-select>
-          <el-select v-model="filterLocation" placeholder="地点筛选" clearable @change="handleFilter">
-            <el-option
-              v-for="location in locations"
-              :key="location"
-              :label="location"
-              :value="location"
-            />
-          </el-select>
-          <el-select v-model="filterStatus" placeholder="状态筛选" clearable @change="handleFilter">
-            <el-option label="未开始" value="not_started" />
-            <el-option label="进行中" value="in_progress" />
-            <el-option label="已完成" value="completed" />
-            <el-option label="已放弃" value="abandoned" />
-          </el-select>
-        </div>
       </div>
 
       <!-- 批量操作 -->
@@ -183,7 +197,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Search } from '@element-plus/icons-vue'
 import BatchOperations from '../../components/BatchOperations.vue'
 import TaskImportExport from '../../components/TaskImportExport.vue'
 import { taskApi } from '../../api'
@@ -199,39 +213,17 @@ const searchQuery = ref('')
 const filterTag = ref('')
 const filterLocation = ref('')
 const filterStatus = ref('')
+const filterPriority = ref('')
 
 // 选中的任务
 const selectedTasks = ref([])
 
 // 标签和地点列表
-const tags = ref(['工作', '学习', '生活', '文档'])
-const locations = ref(['办公室', '家里', '图书馆'])
+const tags = ref([])
+const locations = ref([])
 
-// 模拟数据
-const tasks = ref([
-  {
-    id: 1,
-    name: '完成项目文档',
-    startTime: '2024-03-20 09:00',
-    endTime: '2024-03-20 12:00',
-    status: 'in_progress',
-    priority: '高',
-    tags: ['工作', '文档'],
-    location: '办公室'
-  },
-  {
-    id: 2,
-    name: '每日阅读',
-    startTime: '2024-03-20 14:00',
-    endTime: null,
-    status: 'not_started',
-    priority: '中',
-    tags: ['学习'],
-    location: '图书馆',
-    completionCount: 2,
-    requiredCount: 5
-  }
-])
+// 任务列表
+const tasks = ref([])
 
 // 计算属性：过滤后的任务列表
 const filteredTasks = computed(() => {
@@ -379,17 +371,38 @@ const handleAbandon = async (task) => {
 // 获取任务列表
 const getTasks = async () => {
   try {
+    loading.value = true
+    error.value = null
     const response = await taskApi.getTasks()
     tasks.value = response.data
-  } catch (error) {
-    console.error('获取任务列表失败:', error)
-    ElMessage.error('获取任务列表失败')
+  } catch (err) {
+    console.error('获取任务列表失败:', err)
+    error.value = '获取任务列表失败，请检查网络连接'
+    tasks.value = []
+  } finally {
+    loading.value = false
   }
 }
 
-// 初始化
-onMounted(() => {
-  getTasks()
+// 获取标签和地点列表
+const getTagsAndLocations = async () => {
+  try {
+    const response = await taskApi.getTagsAndLocations()
+    tags.value = response.data.tags
+    locations.value = response.data.locations
+  } catch (err) {
+    console.error('获取标签和地点列表失败:', err)
+    tags.value = []
+    locations.value = []
+  }
+}
+
+// 初始化数据
+onMounted(async () => {
+  await Promise.all([
+    getTasks(),
+    getTagsAndLocations()
+  ])
 })
 </script>
 
@@ -407,16 +420,14 @@ onMounted(() => {
     }
   }
 
-  .view-controls {
+  .filter-bar {
     margin-bottom: 20px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    gap: 16px;
+  }
 
-    .search-filter {
-      display: flex;
-      gap: 16px;
-    }
+  .view-switcher {
+    margin-bottom: 20px;
   }
 
   .list-view {
