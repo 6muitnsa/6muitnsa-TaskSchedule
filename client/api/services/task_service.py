@@ -179,12 +179,15 @@ class TaskService:
             conn = get_db()
             cursor = conn.cursor()
             
-            # 首先删除现有的位置关联
-            cursor.execute('DELETE FROM task_locations WHERE task_id = ?', (task_id,))
+            # 获取地点名称
+            cursor.execute("SELECT name FROM locations WHERE id = ?", (location_id,))
+            location = cursor.fetchone()
+            if not location:
+                return False
             
-            # 添加新的位置关联
-            cursor.execute('INSERT INTO task_locations (task_id, location_id) VALUES (?, ?)',
-                          (task_id, location_id))
+            # 更新任务表中的地点字段
+            cursor.execute("UPDATE tasks SET location = ? WHERE id = ?", 
+                         (location['name'], task_id))
             
             conn.commit()
             return True

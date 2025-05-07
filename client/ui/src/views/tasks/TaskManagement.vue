@@ -60,12 +60,14 @@
       <div class="tag-list">
         <el-tag
           v-for="tag in tags"
-          :key="tag"
+          :key="tag.id"
           closable
           @close="handleDeleteTag(tag)"
           class="tag-item"
+          type="info"
+          effect="plain"
         >
-          {{ tag }}
+          {{ tag.name }}
         </el-tag>
       </div>
     </el-card>
@@ -78,26 +80,19 @@
           <el-button type="primary" @click="handleAddLocation">添加地点</el-button>
         </div>
       </template>
-      <el-table :data="locations" style="width: 100%">
-        <el-table-column prop="name" label="地点名称" />
-        <el-table-column prop="commute_time" label="通勤时间">
-          <template #default="{ row }">
-            {{ row.commute_time }} 分钟
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200">
-          <template #default="{ row }">
-            <el-button-group>
-              <el-button size="small" @click="handleEditLocation(row)">编辑</el-button>
-              <el-button 
-                size="small" 
-                type="danger" 
-                @click="handleDeleteLocation(row)"
-              >删除</el-button>
-            </el-button-group>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="tag-list">
+        <el-tag
+          v-for="location in locations"
+          :key="location"
+          closable
+          @close="handleDeleteLocation(location)"
+          class="tag-item"
+          type="info"
+          effect="plain"
+        >
+          {{ location }}
+        </el-tag>
+      </div>
     </el-card>
 
     <!-- 标签添加对话框 -->
@@ -119,30 +114,21 @@
       </template>
     </el-dialog>
 
-    <!-- 地点添加/编辑对话框 -->
+    <!-- 地点添加对话框 -->
     <el-dialog
       v-model="locationDialogVisible"
-      :title="isEditingLocation ? '编辑地点' : '添加地点'"
+      title="添加地点"
       width="30%"
     >
-      <el-form :model="locationForm" label-width="80px">
+      <el-form :model="newLocation" label-width="80px">
         <el-form-item label="地点名称">
-          <el-input v-model="locationForm.name" />
-        </el-form-item>
-        <el-form-item label="通勤时间">
-          <el-input-number 
-            v-model="locationForm.commute_time" 
-            :min="1" 
-            :max="120"
-          >
-            <template #append>分钟</template>
-          </el-input-number>
+          <el-input v-model="newLocation" />
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="locationDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitLocation">确定</el-button>
+          <el-button type="primary" @click="submitNewLocation">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -161,12 +147,8 @@ const tasks = ref([])
 const selectedTasks = ref([])
 const tagDialogVisible = ref(false)
 const locationDialogVisible = ref(false)
-const isEditingLocation = ref(false)
 const newTag = ref({ name: '' })
-const locationForm = ref({
-  name: '',
-  commute_time: 30
-})
+const newLocation = ref('')
 
 // 获取数据
 const fetchData = async () => {
@@ -176,8 +158,8 @@ const fetchData = async () => {
     tags.value = tagsResponse.data
 
     // 获取地点
-    const locationsResponse = await api.get('/locations')
-    locations.value = locationsResponse.data
+    const locationsResponse = await api.get('/locations/')
+    locations.value = locationsResponse.data ? locationsResponse.data.map(loc => loc.name) : []
 
     // 获取任务列表
     const tasksResponse = await api.get('/tasks')
@@ -248,7 +230,7 @@ const handleDeleteTag = async (tag) => {
     await ElMessageBox.confirm('确定要删除这个标签吗？', '警告', {
       type: 'warning'
     })
-    await api.delete(`/tags/${tag}`)
+    await api.delete(`/tags/${tag.id}`)
     ElMessage.success('删除标签成功')
     await fetchData()
   } catch (error) {
@@ -261,33 +243,18 @@ const handleDeleteTag = async (tag) => {
 
 // 地点相关方法
 const handleAddLocation = () => {
-  isEditingLocation.value = false
-  locationForm.value = {
-    name: '',
-    commute_time: 30
-  }
+  newLocation.value = ''
   locationDialogVisible.value = true
 }
 
-const handleEditLocation = (location) => {
-  isEditingLocation.value = true
-  locationForm.value = { ...location }
-  locationDialogVisible.value = true
-}
-
-const submitLocation = async () => {
+const submitNewLocation = async () => {
   try {
-    if (isEditingLocation.value) {
-      await api.put(`/locations/${locationForm.value.id}`, locationForm.value)
-      ElMessage.success('更新地点成功')
-    } else {
-      await api.post('/locations', locationForm.value)
-      ElMessage.success('添加地点成功')
-    }
+    await api.post('/locations', { name: newLocation.value })
+    ElMessage.success('添加地点成功')
     locationDialogVisible.value = false
     await fetchData()
   } catch (error) {
-    ElMessage.error(isEditingLocation.value ? '更新地点失败' : '添加地点失败')
+    ElMessage.error('添加地点失败')
     console.error(error)
   }
 }
@@ -297,7 +264,7 @@ const handleDeleteLocation = async (location) => {
     await ElMessageBox.confirm('确定要删除这个地点吗？', '警告', {
       type: 'warning'
     })
-    await api.delete(`/locations/${location.id}`)
+    await api.delete(`/locations/${location}`)
     ElMessage.success('删除地点成功')
     await fetchData()
   } catch (error) {

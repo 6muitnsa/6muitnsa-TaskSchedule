@@ -18,7 +18,7 @@
       <div v-else-if="task" class="task-content">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="任务名称" :span="2">
-            {{ task.name }}
+            {{ task.title }}
           </el-descriptions-item>
           <el-descriptions-item label="优先级">
             <el-tag :type="getPriorityType(task.priority)">
@@ -47,7 +47,7 @@
             {{ formatDate(task.created_at) }}
           </el-descriptions-item>
           <el-descriptions-item label="截止时间">
-            {{ formatDate(task.deadline) }}
+            {{ formatDate(task.due_date) }}
           </el-descriptions-item>
         </el-descriptions>
 

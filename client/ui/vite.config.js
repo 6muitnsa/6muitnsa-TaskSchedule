@@ -25,17 +25,40 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        rewrite: (path) => {
+          const newPath = path.replace(/^(\/api)+/, '/api')
+          console.log('代理请求:', {
+            originalPath: path,
+            newPath: newPath,
+            target: `http://${config.app.host}:${config.app.port}`,
+            config: config
+          })
+          return newPath
+        },
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-          });
+            console.error('代理错误:', err)
+            console.error('请求信息:', {
+              url: req.url,
+              method: req.method,
+              headers: req.headers
+            })
+          })
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
+            console.log('发送代理请求:', {
+              method: req.method,
+              url: req.url,
+              headers: req.headers,
+              body: req.body
+            })
+          })
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
+            console.log('收到代理响应:', {
+              statusCode: proxyRes.statusCode,
+              url: req.url,
+              headers: proxyRes.headers
+            })
+          })
         }
       },
     },

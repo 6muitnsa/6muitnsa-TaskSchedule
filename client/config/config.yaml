@@ -1,50 +1,61 @@
-# 开发环境配置
 app:
-  name: "任务调度系统"
+  name: 任务调度系统
   debug: true
-  host: "127.0.0.1"
+  host: 127.0.0.1
   port: 5000
-
-# 前端配置
 frontend:
-  host: "127.0.0.1"
+  host: 127.0.0.1
   port: 5173
-
-# 数据库配置
 database:
-  path: "api/data/tasks.db"
-  backup_path: "api/data/backup"
-
-# 调度器配置
+  path: api/data/tasks.db
+  backup_path: api/data/backup
 scheduler:
-  default_algorithm: "FCFS"
+  default_algorithm: FCFS
   time_slice: 25
-  task_density: "medium"
+  task_density: medium
   daily_task_limit: 480
-
-# 番茄钟配置
+  enabled: true
+  algorithm: round-robin
+  customType: file
+  customCode: ''
+  densityPreference: none
+  dailyTaskLimit: 6
+  completionPreference: early
+  sliceDuration: 25
+  syncWithPomodoro: false
 pomodoro:
   default_focus_time: 25
   default_rest_time: 5
   long_rest_time: 15
   long_rest_interval: 4
-
-# 同步配置
 sync:
   timeout: 300
   qrcode_size: 200
   max_retry: 3
-
-# 远程访问配置
 remote:
-  cloudflared_path: "utils/Cloudflared/cloudflared-windows-386.exe"
-  tunnel_wait_time: 6  # 等待隧道启动的时间（秒）
-  temp_file_suffix: ".txt"  # 临时文件后缀
-
-# 日志配置
+  cloudflared_path: utils/Cloudflared/cloudflared-windows-386.exe
+  tunnel_wait_time: 6
+  temp_file_suffix: .txt
 logging:
-  level: "INFO"
-  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  file: "logs/app.log"
-  max_size: 10485760  # 10MB
-  backup_count: 5 
+  level: INFO
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  file: logs/app.log
+  max_size: 10485760
+  backup_count: 5
+priority:
+  totalPriority: 5100
+  intervalCount: 4
+  intervals:
+  - name: 高优先级
+    min: 0
+    max: 1700
+  - name: 中优先级
+    min: 1700
+    max: 3400
+  - name: 低优先级
+    min: 3400
+    max: 5100
+  - name: 区间4
+    min: 3825
+    max: 5100
+  priorityStep: 51

@@ -21,7 +21,7 @@
 
         <!-- 任务名称（选填，为空时与任务ID一致） -->
         <el-form-item label="任务名称">
-          <el-input v-model="form.name" placeholder="选填，为空时与任务ID一致" />
+          <el-input v-model="form.title" placeholder="选填，为空时与任务ID一致" />
         </el-form-item>
 
         <!-- 任务描述（选填） -->
@@ -126,31 +126,34 @@
         </el-form-item>
 
         <!-- 时间输入 -->
-        <el-form-item label="时间设置">
-          <el-form-item label="开始时间">
-            <el-date-picker
-              v-model="form.startTime"
-              type="datetime"
-              placeholder="选填，不填则为任务创建时的时间"
-            />
-          </el-form-item>
+        <el-form-item label="创建时间">
+          <el-date-picker
+            v-model="form.created_at"
+            type="datetime"
+            placeholder="选填，默认为当前时间"
+            format="YYYY-MM-DD HH:mm"
+            value-format="YYYY-MM-DD HH:mm"
+          />
+        </el-form-item>
 
-          <el-form-item label="结束时间">
-            <el-date-picker
-              v-model="form.endTime"
-              type="datetime"
-              placeholder="选填，不填则为无时限任务"
-            />
-          </el-form-item>
+        <el-form-item label="截止时间">
+          <el-date-picker
+            v-model="form.due_date"
+            type="datetime"
+            placeholder="选填，不填则为无时限任务"
+            format="YYYY-MM-DD HH:mm"
+            value-format="YYYY-MM-DD HH:mm"
+          />
+        </el-form-item>
 
-          <el-form-item label="预计完成时间">
-            <el-input-number
-              v-model="form.estimatedTime"
-              :min="1"
-              placeholder="选填，不填时为60分钟"
-            />
-            <span class="unit">分钟</span>
-          </el-form-item>
+        <!-- 预计完成时间 -->
+        <el-form-item label="预计完成时间">
+          <el-input-number
+            v-model="form.estimatedTime"
+            :min="1"
+            placeholder="选填，不填时为60分钟"
+          />
+          <span class="unit">分钟</span>
         </el-form-item>
 
         <!-- 地点输入 -->
@@ -329,6 +332,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useTaskStore, useSettingsStore } from '@/store'
+import api from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -342,15 +346,15 @@ const isEdit = computed(() => !!route.params.id)
 // 表单数据
 const form = reactive({
   id: '',
-  name: '',
+  title: '',
   description: '',
   priorityRange: '',
   priorityNumber: null,
   relativeTask: '',
   relativePosition: 'before',
   tags: [],
-  startTime: '',
-  endTime: '',
+  created_at: '',
+  due_date: '',
   estimatedTime: 60,
   location: '',
   startLocation: '',
@@ -462,11 +466,21 @@ const removeTag = (tag) => {
 }
 
 // 添加新地点
-const addNewLocation = () => {
-  if (newLocation.value && !existingLocations.value.includes(newLocation.value)) {
-    existingLocations.value.push(newLocation.value)
-    form.location = newLocation.value
+const addNewLocation = async () => {
+  if (!newLocation.value) {
+    ElMessage.warning('请输入地点名称')
+    return
+  }
+  
+  try {
+    const response = await api.post('/locations', { name: newLocation.value })
+    existingLocations.value.push(response.data.name)
+    form.location = response.data.name
     newLocation.value = ''
+    ElMessage.success('添加地点成功')
+  } catch (error) {
+    ElMessage.error('添加地点失败')
+    console.error(error)
   }
 }
 

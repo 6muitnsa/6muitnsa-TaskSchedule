@@ -104,24 +104,35 @@
             </div>
           </div>
         </template>
-        
-        <el-form-item>
-          <el-button type="primary" @click="saveSettings">保存设置</el-button>
-          <el-button @click="resetSettings">重置</el-button>
-        </el-form-item>
       </el-form>
     </el-card>
+    <settings-save :settings="settings" />
   </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
+import SettingsSave from '@/components/SettingsSave.vue'
+import { settingsApi } from '@/api'
+
+const settings = ref({
+  general: {
+    systemName: 'TaskSchedule'
+  }
+})
 
 const form = reactive({
   systemName: 'TaskSchedule'
 })
+
+// 监听表单变化，更新 settings
+watch(form, (newForm) => {
+  settings.value.general = {
+    systemName: newForm.systemName
+  }
+}, { deep: true })
 
 const remoteStatus = reactive({
   show: false,
@@ -218,7 +229,7 @@ const cancelSync = async () => {
 
 const saveSettings = async () => {
   try {
-    // TODO: 调用API保存设置
+    await settingsApi.updateSettings(settings.value)
     ElMessage.success('设置保存成功')
   } catch (error) {
     ElMessage.error('设置保存失败')

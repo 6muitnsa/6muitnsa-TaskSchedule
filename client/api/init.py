@@ -1,4 +1,4 @@
-from database import get_db, init_db
+from database import get_db
 
 def init_data():
     """初始化示例数据"""
@@ -111,6 +111,4 @@ def init_data():
     print("示例数据初始化完成")
 
 if __name__ == '__main__':
-    init_db()
-    init_data()
-    print('数据库初始化完成') 
+    init_data() 

@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',  // 使用环境变量
+  baseURL: '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -13,10 +13,18 @@ const api = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   config => {
-    // 可以在这里添加token等认证信息
+    // 打印请求信息
+    console.log('发送请求:', {
+      url: config.url,
+      method: config.method,
+      data: config.data,
+      baseURL: config.baseURL,
+      headers: config.headers
+    })
     return config
   },
   error => {
+    console.error('请求错误:', error)
     return Promise.reject(error)
   }
 )
@@ -24,11 +32,20 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   response => {
+    // 打印响应信息
+    console.log('收到响应:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    })
     return response.data
   },
   error => {
-    // 统一错误处理
-    console.error('API Error:', error)
+    console.error('响应错误:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    })
     return Promise.reject(error)
   }
 )
@@ -57,12 +74,34 @@ export const taskApi = {
 
   // 创建任务
   createTask(data) {
-    return api.post('/tasks', data)
+    // 转换字段名
+    const taskData = {
+      title: data.name,
+      description: data.description,
+      priority: data.priority,
+      status: data.status || 'pending',
+      due_date: data.deadline,
+      location: data.location,
+      estimated_time: data.estimatedTime,
+      tags: data.tags
+    }
+    return api.post('/tasks', taskData)
   },
 
   // 更新任务
   updateTask(id, data) {
-    return api.put(`/tasks/${id}`, data)
+    // 转换字段名
+    const taskData = {
+      title: data.name,
+      description: data.description,
+      priority: data.priority,
+      status: data.status,
+      due_date: data.deadline,
+      location: data.location,
+      estimated_time: data.estimatedTime,
+      tags: data.tags
+    }
+    return api.put(`/tasks/${id}`, taskData)
   },
 
   // 删除任务
@@ -195,11 +234,15 @@ export const pomodoroApi = {
 export const settingsApi = {
   // 获取设置
   getSettings: () => {
+    console.log('调用 getSettings API')
     return api.get('/settings')
   },
   
   // 更新设置
   updateSettings: (data) => {
+    console.log('调用 updateSettings API，数据:', data)
+    console.log('请求URL:', '/settings')
+    console.log('请求方法:', 'PUT')
     return api.put('/settings', data)
   },
   

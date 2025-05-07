@@ -384,11 +384,21 @@ function addNewTag() {
 }
 
 // 添加新地点
-function addNewLocation() {
-  if (newLocation.value && !availableLocations.value.includes(newLocation.value)) {
-    availableLocations.value.push(newLocation.value)
-    form.location = newLocation.value
+async function addNewLocation() {
+  if (!newLocation.value) {
+    ElMessage.warning('请输入地点名称')
+    return
+  }
+
+  try {
+    const response = await taskApi.post('/locations', { name: newLocation.value })
+    availableLocations.value.push(response.data.name)
+    form.location = response.data.name
     newLocation.value = ''
+    ElMessage.success('添加地点成功')
+  } catch (error) {
+    console.error('添加地点失败:', error)
+    ElMessage.error('添加地点失败')
   }
 }
 

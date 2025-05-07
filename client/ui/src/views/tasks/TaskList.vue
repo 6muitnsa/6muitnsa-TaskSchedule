@@ -29,6 +29,7 @@
         </el-input>
 
         <el-select v-model="filterStatus" placeholder="状态" clearable>
+          <el-option label="待处理" value="pending" />
           <el-option label="未开始" value="not_started" />
           <el-option label="进行中" value="in_progress" />
           <el-option label="已完成" value="completed" />
@@ -86,10 +87,10 @@
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="55" />
-          <el-table-column prop="name" label="任务名称" min-width="200">
+          <el-table-column prop="title" label="任务名称" min-width="200">
             <template #default="{ row }">
               <div class="task-name">
-                <span>{{ row.name }}</span>
+                <span>{{ row.title }}</span>
                 <el-tag
                   v-for="tag in row.tags"
                   :key="tag"
@@ -101,10 +102,10 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="startTime" label="开始时间" width="180" />
-          <el-table-column prop="endTime" label="结束时间" width="180">
+          <el-table-column prop="created_at" label="创建时间" width="180" />
+          <el-table-column prop="due_date" label="截止时间" width="180">
             <template #default="{ row }">
-              <span v-if="row.endTime">{{ row.endTime }}</span>
+              <span v-if="row.due_date">{{ row.due_date }}</span>
               <span v-else>完成次数: {{ row.completionCount }}/{{ row.requiredCount }}</span>
             </template>
           </el-table-column>
@@ -135,7 +136,7 @@
                 <el-tooltip
                   v-for="task in getTasksForDate(data.day)"
                   :key="task.id"
-                  :content="task.name"
+                  :content="task.title"
                   placement="top"
                 >
                   <div
@@ -156,11 +157,11 @@
             v-for="task in sortedTasks"
             :key="task.id"
             :type="getPriorityType(task.priority)"
-            :timestamp="task.startTime"
+            :timestamp="task.created_at"
           >
             <el-card>
               <div class="task-header">
-                <h4>{{ task.name }}</h4>
+                <h4>{{ task.title }}</h4>
                 <div class="task-tags">
                   <el-tag
                     v-for="tag in task.tags"
@@ -173,6 +174,7 @@
                 </div>
               </div>
               <div class="task-info">
+                <p>创建时间: {{ task.created_at }}</p>
                 <p>开始时间: {{ task.startTime }}</p>
                 <p v-if="task.endTime">结束时间: {{ task.endTime }}</p>
                 <p v-else>完成次数: {{ task.completionCount }}/{{ task.requiredCount }}</p>
@@ -204,6 +206,10 @@ import { taskApi } from '../../api'
 
 const router = useRouter()
 
+// 状态变量
+const loading = ref(false)
+const error = ref(null)
+
 // 视图控制
 const currentView = ref('list')
 const currentDate = ref(new Date())
@@ -228,7 +234,7 @@ const tasks = ref([])
 // 计算属性：过滤后的任务列表
 const filteredTasks = computed(() => {
   return tasks.value.filter(task => {
-    const matchesSearch = task.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchesSearch = task.title.toLowerCase().includes(searchQuery.value.toLowerCase())
     const matchesTag = !filterTag.value || task.tags.includes(filterTag.value)
     const matchesLocation = !filterLocation.value || task.location === filterLocation.value
     const matchesStatus = !filterStatus.value || task.status === filterStatus.value
@@ -247,7 +253,7 @@ const sortedTasks = computed(() => {
 // 获取指定日期的任务
 const getTasksForDate = (date) => {
   return filteredTasks.value.filter(task => {
-    const taskDate = task.startTime.split(' ')[0]
+    const taskDate = task.created_at.split(' ')[0]
     return taskDate === date
   })
 }
@@ -275,6 +281,7 @@ const getPriorityType = (priority) => {
 // 获取状态类型
 const getStatusType = (status) => {
   const types = {
+    'pending': 'info',
     'not_started': 'info',
     'in_progress': 'warning',
     'completed': 'success',
@@ -286,6 +293,7 @@ const getStatusType = (status) => {
 // 获取状态文本
 const getStatusText = (status) => {
   const texts = {
+    'pending': '待处理',
     'not_started': '未开始',
     'in_progress': '进行中',
     'completed': '已完成',
@@ -435,9 +443,12 @@ onMounted(async () => {
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
 
       .task-tag {
-        margin-left: 8px;
+        margin: 2px 4px;
+        white-space: nowrap;
+        display: inline-block;
       }
     }
   }
@@ -473,6 +484,13 @@ onMounted(async () => {
       .task-tags {
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
+
+        .task-tag {
+          margin: 2px 4px;
+          white-space: nowrap;
+          display: inline-block;
+        }
       }
     }
 

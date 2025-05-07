@@ -40,19 +40,30 @@
           <el-input-number v-model="form.priorityStep" :min="1" :max="100" />
           <span class="form-tip">默认值50</span>
         </el-form-item>
-        
-        <el-form-item>
-          <el-button type="primary" @click="saveSettings">保存设置</el-button>
-          <el-button @click="resetSettings">重置</el-button>
-        </el-form-item>
       </el-form>
     </el-card>
+    <settings-save :settings="settings" />
   </div>
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import SettingsSave from '@/components/SettingsSave.vue'
+import { settingsApi } from '@/api'
+
+const settings = ref({
+  priority: {
+    totalPriority: 5000,
+    intervalCount: 3,
+    intervals: [
+      { name: '高优先级', min: 0, max: 1666 },
+      { name: '中优先级', min: 1667, max: 3333 },
+      { name: '低优先级', min: 3334, max: 5000 }
+    ],
+    priorityStep: 50
+  }
+})
 
 const form = reactive({
   totalPriority: 5000,
@@ -64,6 +75,16 @@ const form = reactive({
   ],
   priorityStep: 50
 })
+
+// 监听表单变化，更新 settings
+watch(form, (newForm) => {
+  settings.value.priority = {
+    totalPriority: newForm.totalPriority,
+    intervalCount: newForm.intervalCount,
+    intervals: newForm.intervals,
+    priorityStep: newForm.priorityStep
+  }
+}, { deep: true })
 
 // 监听区间个数变化，动态调整区间数组
 watch(() => form.intervalCount, (newCount) => {
@@ -95,7 +116,7 @@ watch(() => form.totalPriority, () => {
 
 const saveSettings = async () => {
   try {
-    // TODO: 调用API保存设置
+    await settingsApi.updateSettings(settings.value)
     ElMessage.success('设置保存成功')
   } catch (error) {
     ElMessage.error('设置保存失败')

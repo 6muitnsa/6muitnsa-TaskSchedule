@@ -9,7 +9,11 @@ import router from './router'
 import './styles/global.scss'
 import './styles/main.scss'
 
+console.log('Vue 应用开始初始化')
+
 const app = createApp(App)
+
+console.log('Vue 应用实例已创建')
 
 // 注册所有图标
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
@@ -29,6 +33,8 @@ app.use(ElementPlus, {
 // 注册路由
 app.use(router)
 
+console.log('Vue 插件已加载')
+
 // 全局错误处理
 app.config.errorHandler = (err, vm, info) => {
   console.error('全局错误:', err)
@@ -36,4 +42,6 @@ app.config.errorHandler = (err, vm, info) => {
 }
 
 // 挂载应用
-app.mount('#app') 
+app.mount('#app')
+
+console.log('Vue 应用已挂载') 

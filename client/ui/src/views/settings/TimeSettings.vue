@@ -75,19 +75,27 @@
             </template>
           </template>
         </template>
-        
-        <el-form-item>
-          <el-button type="primary" @click="saveSettings">保存设置</el-button>
-          <el-button @click="resetSettings">重置</el-button>
-        </el-form-item>
       </el-form>
     </el-card>
+    <settings-save :settings="settings" />
   </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import SettingsSave from '@/components/SettingsSave.vue'
+import { settingsApi } from '@/api'
+
+const settings = ref({
+  timePrediction: {
+    enabled: false,
+    commutePredictionEnabled: false,
+    defaultCommuteTime: 15,
+    routeTableEnabled: false,
+    routes: []
+  }
+})
 
 const form = reactive({
   timePredictionEnabled: false,
@@ -96,6 +104,17 @@ const form = reactive({
   routeTableEnabled: false,
   routes: []
 })
+
+// 监听表单变化，更新 settings
+watch(form, (newForm) => {
+  settings.value.timePrediction = {
+    enabled: newForm.timePredictionEnabled,
+    commutePredictionEnabled: newForm.commutePredictionEnabled,
+    defaultCommuteTime: newForm.defaultCommuteTime,
+    routeTableEnabled: newForm.routeTableEnabled,
+    routes: newForm.routes
+  }
+}, { deep: true })
 
 const newRoute = reactive({
   location1: '',
@@ -135,7 +154,7 @@ const deleteRoute = (index) => {
 
 const saveSettings = async () => {
   try {
-    // TODO: 调用API保存设置
+    await settingsApi.updateSettings(settings.value)
     ElMessage.success('设置保存成功')
   } catch (error) {
     ElMessage.error('设置保存失败')

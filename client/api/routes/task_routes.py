@@ -280,22 +280,4 @@ def get_tags():
         logger.error(f'获取标签列表失败: {str(e)}', exc_info=True)
         return error_response(message=f'获取标签列表失败: {str(e)}')
 
-@bp.route('/locations', methods=['GET'])
-def get_locations():
-    """获取所有位置"""
-    try:
-        logger.info('开始获取位置列表')
-        db = get_db()
-        cursor = db.execute('''
-            SELECT DISTINCT location
-            FROM tasks
-            WHERE location IS NOT NULL AND location != ''
-        ''')
-        locations = [row['location'] for row in cursor.fetchall() if row['location']]
-        logger.info(f'成功获取位置列表，共{len(locations)}条记录')
-        return success_response(data=locations, message='获取位置列表成功')
-    except Exception as e:
-        logger.error(f'获取位置列表失败: {str(e)}', exc_info=True)
-        return error_response(message=f'获取位置列表失败: {str(e)}')
-
 # ... 其他任务相关路由 

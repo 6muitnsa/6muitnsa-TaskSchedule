@@ -111,6 +111,7 @@ import {
 import ECharts from '../components/ECharts.vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { statisticsApi } from '../api'
 
 // 统计卡片数据
 const statCards = ref([
@@ -274,41 +275,40 @@ const efficiencyChartOptions = computed(() => ({
 // 获取统计数据
 const getStatistics = async () => {
   try {
-    loading.value = true
-    error.value = null
-    const response = await statisticsApi.getStatistics()
+    const response = await statisticsApi.getOverview()
     const data = response.data
     
     // 更新统计卡片
-    statCards.value[0].value = data.task_stats.total.toString()
-    statCards.value[1].value = data.task_stats.completed.toString()
-    statCards.value[2].value = `${Math.round(data.focus_stats.average)}h`
-    statCards.value[3].value = data.satisfaction.toString()
+    statCards.value[0].value = data.total_tasks.toString()
+    statCards.value[1].value = data.completed_tasks.toString()
+    statCards.value[2].value = `${Math.round(data.completion_rate)}%`
+    statCards.value[3].value = data.pending_tasks.toString()
     
     // 更新趋势图数据
-    trendChartOptions.value.xAxis.data = data.trend.dates
-    trendChartOptions.value.series[0].data = data.trend.completed
-    trendChartOptions.value.series[1].data = data.trend.in_progress
-    trendChartOptions.value.series[2].data = data.trend.pending
+    const dates = Object.keys(data.daily_completion).sort()
+    trendChartOptions.value.xAxis.data = dates
+    trendChartOptions.value.series[0].data = dates.map(date => data.daily_completion[date])
+    trendChartOptions.value.series[1].data = dates.map(() => 0) // 进行中的任务数
+    trendChartOptions.value.series[2].data = dates.map(() => 0) // 待开始的任务数
     
     // 更新类型分布图数据
-    typeChartOptions.value.series[0].data = data.type_distribution
+    typeChartOptions.value.series[0].data = Object.entries(data.priority_distribution).map(([name, value]) => ({
+      name,
+      value
+    }))
     
     // 更新效率分析图数据
-    efficiencyChartOptions.value.xAxis.data = data.efficiency.dates
-    efficiencyChartOptions.value.series[0].data = data.efficiency.values
+    efficiencyChartOptions.value.xAxis.data = dates
+    efficiencyChartOptions.value.series[0].data = dates.map(date => data.daily_completion[date])
   } catch (err) {
     console.error('获取统计数据失败:', err)
-    error.value = '获取统计数据失败，请检查网络连接'
-  } finally {
-    loading.value = false
   }
 }
 
 // 更新趋势图表
 const updateTrendChart = async () => {
   try {
-    const response = await api.get(`/statistics/trend?range=${trendTimeRange.value}`)
+    const response = await statisticsApi.getTrend(trendTimeRange.value)
     // TODO: 更新图表数据
   } catch (error) {
     ElMessage.error('获取趋势数据失败：' + error.message)
@@ -318,7 +318,7 @@ const updateTrendChart = async () => {
 // 更新类型图表
 const updateTypeChart = async () => {
   try {
-    const response = await api.get(`/statistics/type?view=${typeChartView.value}`)
+    const response = await statisticsApi.getTypeStats(typeChartView.value)
     // TODO: 更新图表数据
   } catch (error) {
     ElMessage.error('获取类型数据失败：' + error.message)
@@ -328,7 +328,7 @@ const updateTypeChart = async () => {
 // 更新效率图表
 const updateEfficiencyChart = async () => {
   try {
-    const response = await api.get(`/statistics/efficiency?metric=${efficiencyMetric.value}&range=${efficiencyTimeRange.value}`)
+    const response = await statisticsApi.getEfficiency(efficiencyMetric.value, efficiencyTimeRange.value)
     // TODO: 更新图表数据
   } catch (error) {
     ElMessage.error('获取效率数据失败：' + error.message)
@@ -338,8 +338,7 @@ const updateEfficiencyChart = async () => {
 // 刷新所有数据
 const refreshData = async () => {
   try {
-    const response = await api.get('/statistics/overview')
-    statCards.value = response.data.cards
+    await getStatistics()
     await Promise.all([
       updateTrendChart(),
       updateTypeChart(),

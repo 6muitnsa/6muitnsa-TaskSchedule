@@ -80,7 +80,7 @@ const routes = [
   {
     path: ROUTE_PATHS.TASK_LIST,
     name: 'TaskList',
-    component: () => import('../views/tasks/List.vue'),
+    component: () => import('../views/tasks/TaskList.vue'),
     meta: { title: '任务列表' }
   },
   {
@@ -98,13 +98,13 @@ const routes = [
   {
     path: ROUTE_PATHS.TASK_EDIT,
     name: 'TaskEdit',
-    component: () => import('../views/tasks/Edit.vue'),
+    component: () => import('../views/tasks/EditTask.vue'),
     meta: { title: '编辑任务' }
   },
   {
     path: ROUTE_PATHS.TASK_DETAIL,
     name: 'TaskDetail',
-    component: () => import('../views/tasks/Detail.vue'),
+    component: () => import('../views/tasks/TaskDetail.vue'),
     meta: { title: '任务详情' }
   },
   {
