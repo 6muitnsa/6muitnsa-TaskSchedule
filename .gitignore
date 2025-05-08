@@ -1,3 +1,10 @@
+# 相关文档
+/debug原则.md
+/历史版本/
+/模板/
+/图片图表/
+
+
 # Python
 __pycache__/
 *.py[cod]
@@ -28,8 +35,7 @@ Thumbs.db
 # 日志文件
 *.log
 logs/
-server/service/logs/
-client/service/logs/
+client/logs/
 
 # 测试和覆盖率报告
 coverage/
@@ -49,23 +55,14 @@ temp/
 tmp/
 
 # 构建产物
-# 服务端
-server/service/__pycache__/
-server/service/build/
-server/service/dist/
-server/AI/__pycache__/
-server/AI/build/
-server/AI/dist/
-
 # 客户端
-client/service/__pycache__/
-client/service/build/
-client/service/dist/
-client/webui/dist/
-client/webui/node_modules/
-client/webui/.next/
-client/webui/.nuxt/
-client/webui/.output/
+client/__pycache__/
+client/build/
+client/dist/
+client/ui/node_modules/
+client/ui/.next/
+client/ui/.nuxt/
+client/ui/.output/
 
 # Node
 node_modules/
